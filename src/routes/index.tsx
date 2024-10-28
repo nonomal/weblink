@@ -32,11 +32,15 @@ import {
 
 import { createMediaQuery } from "@solid-primitives/media";
 import { makePersisted } from "@solid-primitives/storage";
-import { IconPerson } from "@/components/icons";
+import {
+  IconFilterList,
+  IconPerson,
+} from "@/components/icons";
 import { UserItem } from "@/components/chat/clientlist";
 import { messageStores } from "@/libs/core/messge";
 import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
+import { Button } from "@/components/ui/button";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {
@@ -107,7 +111,8 @@ export default function Home(props: RouteSectionProps) {
     >
       <ResizablePanel
         class={cn(
-          "data-[collapsed]:transition-all data-[collapsed]:ease-in-out",
+          `relative data-[collapsed]:transition-all
+          data-[collapsed]:ease-in-out`,
           isMobile() &&
             matches()[matches().length - 1].path !== "/" &&
             "hidden",
@@ -127,54 +132,70 @@ export default function Home(props: RouteSectionProps) {
             }
           });
           return (
-            <div
-              class="h-full w-full overflow-x-hidden bg-background/80
-                backdrop-blur md:sticky md:top-[calc(3rem)]
-                md:h-[calc(100vh_-_3rem)] md:overflow-y-auto"
-            >
-              <ul
-                class={cn(
-                  "flex h-full w-full flex-col [&>li]:py-1",
-                  props.collapsed
-                    ? ""
-                    : "divide-y divide-muted",
-                )}
+            <>
+              <div
+                class="flex h-full w-full flex-col overflow-x-hidden
+                  bg-background/80 md:sticky md:top-[calc(3rem)]
+                  md:h-[calc(100vh_-_3rem)] md:overflow-y-auto"
               >
-                <For
-                  each={clntWithLastMsg()}
-                  fallback={
-                    <div class="relative h-full w-full overflow-hidden">
-                      <div
-                        class="absolute left-1/2 top-1/2 flex w-1/2 -translate-x-1/2
-                          -translate-y-1/2 flex-col items-center"
-                      >
-                        <IconPerson class="text-muted/50" />
-                        <Show
-                          when={
-                            sessionService.clientServiceStatus() ===
-                            "disconnected"
-                          }
-                        >
-                          <p class="muted sm:hidden">
-                            {t(
-                              "chat.index.guide_description",
-                            )}
-                          </p>
-                        </Show>
-                      </div>
-                    </div>
-                  }
-                >
-                  {({ client, message }) => (
-                    <UserItem
-                      message={message}
-                      client={client}
-                      collapsed={props.collapsed}
-                    />
+                <Show when={!props.collapsed}>
+                  <div
+                    class="sticky top-0 z-10 flex items-center justify-between p-2
+                      backdrop-blur"
+                  >
+                    <h4 class="h4">
+                      {t("chat.index.title")}
+                    </h4>
+                    <Button variant="outline" size="icon">
+                      <IconFilterList class="size-4" />
+                    </Button>
+                  </div>
+                </Show>
+                <ul
+                  class={cn(
+                    "flex h-full w-full flex-col [&>li]:py-1",
+                    props.collapsed
+                      ? ""
+                      : "divide-y divide-muted",
                   )}
-                </For>
-              </ul>
-            </div>
+                >
+                  <For
+                    each={clntWithLastMsg()}
+                    fallback={
+                      <div class="relative h-full w-full overflow-hidden">
+                        <div
+                          class="absolute left-1/2 top-1/2 flex w-1/2 -translate-x-1/2
+                            -translate-y-1/2 flex-col items-center"
+                        >
+                          <IconPerson class="text-muted/50" />
+                          <Show
+                            when={
+                              sessionService.clientServiceStatus() ===
+                              "disconnected"
+                            }
+                          >
+                            <p class="muted sm:hidden">
+                              {t(
+                                "chat.index.guide_description",
+                              )}
+                            </p>
+                          </Show>
+                        </div>
+                      </div>
+                    }
+                  >
+                    {({ client, message }) => (
+                      <UserItem
+                        message={message}
+                        client={client}
+                        collapsed={props.collapsed}
+                      />
+                    )}
+                  </For>
+                </ul>
+              </div>
+              <div class="absolute inset-0 z-[-1] backdrop-blur"></div>
+            </>
           );
         }}
       </ResizablePanel>

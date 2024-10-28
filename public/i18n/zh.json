@@ -156,6 +156,7 @@
       "delete_client": "删除客户端"
     },
     "index": {
+      "title": "对话",
       "description": "扫描二维码或分享链接以连接到此房间，右键点击复制链接",
       "guide_title": "创建或连接到房间",
       "guide_description": "你可以通过点击右上角按钮，创建一个新房间或连接到一个现有房间",
@@ -238,7 +239,12 @@
         "mime_type": "MIME 类型"
       },
       "toggle_columns": "切换列",
-      "no_data": "没有数据"
+      "no_data": "没有数据",
+      "cache_status": {
+        "done": "完成",
+        "pending": "等待中",
+        "aborted": "中断"
+      }
     },
     "client_info_dialog": {
       "title": "客户端 {{name}} 信息",

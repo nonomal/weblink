@@ -156,6 +156,7 @@
       "delete_client": "Delete Client"
     },
     "index": {
+      "title": "Conversations",
       "description": "Scan the QR code or share the link to connect to this room, right-click to copy the link",
       "guide_title": "Create or connect to a room",
       "guide_description": "You can create a new room or connect to an existing room by clicking the button on the top right corner",
@@ -209,7 +210,12 @@
         "mime_type": "MIME Type"
       },
       "toggle_columns": "Toggle Columns",
-      "no_data": "No Data"
+      "no_data": "No Data",
+      "cache_status": {
+        "done": "Done",
+        "pending": "Pending",
+        "aborted": "Aborted"
+      }
     },
     "confirm_delete_files_dialog": {
       "title": "Delete Files",

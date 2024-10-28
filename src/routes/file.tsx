@@ -3,6 +3,7 @@ import {
   batch,
   createEffect,
   createMemo,
+  createResource,
   createSignal,
   For,
   onMount,
@@ -82,6 +83,7 @@ import {
 import { createStore } from "solid-js/store";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { setAppOptions } from "@/options";
+import { Badge } from "@/components/ui/badge";
 
 const createComfirmDialog = () => {
   const { open, close, submit, Component } = createDialog({
@@ -170,6 +172,41 @@ export default function File() {
         </p>
       ),
       enableGlobalFilter: true,
+      enableSorting: false,
+    }),
+    columnHelper.display({
+      id: "status",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.status")}
+        />
+      ),
+      cell: ({ row }) => {
+        const [isDone] = createResource(
+          () => row.original.id,
+          async (id) => {
+            return await cacheManager.caches[id].isDone();
+          },
+          {
+            initialValue: false,
+          },
+        );
+
+        const isComplete = createMemo(
+          () => row.original.file && isDone(),
+        );
+
+        const status = createMemo(() => {
+          return isComplete()
+            ? t("common.file_table.cache_status.done")
+            : isDone()
+              ? t("common.file_table.cache_status.pending")
+              : t("common.file_table.cache_status.aborted");
+        });
+
+        return <Badge variant="outline">{status()}</Badge>;
+      },
       enableSorting: false,
     }),
     columnHelper.accessor("fileSize", {
