@@ -2,11 +2,11 @@
 
 ## Introduction
 
-Weblink is a browser-based chat application built on WebRTC, requiring no downloads and usable directly in your browser. It offers a serverless, peer-to-peer architecture powered by Firebase signaling and deployed on Vercel. The application supports real-time text chat, file transfer, file storage, video calls, and multi-party communication through a mesh network. Advanced features include chunked and compressed file transfers for efficient and resumable large file sharing, multi-channel data transfer using multiple DataChannels for faster performance, and IndexedDB caching to minimize memory usage during transfers. End-to-end encryption ensures privacy and security with encrypted signaling messages.
+Weblink is a browser-based chat application built on WebRTC, requiring no downloads and usable directly in your browser. It offers a serverless, P2P architecture with multiple backends, including Firebase and WebSocket. The application supports real-time text chat, file transfer, file storage, video calls, and multi-party communication through a mesh network. Advanced features include chunked and compressed file transfers for efficient and resumable large file sharing, multi-channel data transfer using multiple DataChannels for faster performance, and IndexedDB caching to minimize memory usage during transfers. End-to-end encryption ensures privacy and security with encrypted signaling messages.
 
-This project is deployed on Vercel. [Click here to access](https://web1ink.vercel.app).
+This project is deployed on Vercel. Check it out at [https://web1ink.vercel.app](https://web1ink.vercel.app).
 
-For mainland Chinese users, you can use [https://webl.ink](https://webl.ink) which deployed on aliyun instead.
+You can also use [https://webl.ink](https://webl.ink) which deployed on aliyun instead.
 
 [**中文介绍**](README_CN.md)
 
@@ -107,6 +107,12 @@ If you are using P2P connections outside a local area network (in a NAT environm
 turn:turn1.example.com:3478|user1|pass1|longterm
 turns:turn2.example.com:5349|user2|pass2|hmac
 ```
+
+### Use in LAN
+
+The application currently supports LAN use in non-secure environments. Ensure that your devices are in the same LAN and the firewall does not block P2P connections.
+
+And at the same time, run [weblink-ws-server](https://github.com/99percentpeople/weblink-ws-server) to support WEBSOCKET connections.
 
 ## Contribution
 

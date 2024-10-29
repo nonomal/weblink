@@ -2,13 +2,13 @@
 
 ## 简介
 
-Weblink 是一个基于 WebRTC 的纯网页聊天应用程序，无需下载，可直接在浏览器中使用。它采用无服务器的 P2P 架构，由 Firebase 信令支持并部署在 Vercel 上。该应用支持实时文字聊天、文件传输、文件存储和视频通话，且可以通过网状网络实现多方通信。特色功能包括：分块和压缩文件传输，实现高效的大文件传输及断点续传；通过多 DataChannel 实现并行数据传输，提升传输性能；使用 IndexedDB 缓存传输文件，减少内存占用。Weblink 还通过端到端加密保障信令消息的隐私和安全。
+Weblink 是一个基于 WebRTC 的纯网页聊天应用程序，无需下载，可直接在浏览器中使用。它采用无服务器的 P2P 架构，多种后端支持，包括 Firebase 和 WebSocket。该应用支持实时文字聊天、文件传输、文件存储和视频通话，且可以通过网状网络实现多方通信。特色功能包括：分块和压缩文件传输，实现高效的大文件传输及断点续传；通过多 DataChannel 实现并行数据传输，提升传输性能；使用 IndexedDB 缓存传输文件，减少内存占用。Weblink 还通过端到端加密保障信令消息的隐私和安全。
 
-该项目已通过vercel部署，[点击访问](https://web1ink.vercel.app)。
+该项目已通过vercel部署，请访问 [https://web1ink.vercel.app](https://web1ink.vercel.app)。
 
-对于中国大陆用户，可以使用部署在阿里云上的 [https://webl.ink](https://webl.ink) 。
+或者使用部署在阿里云上的 [https://webl.ink](https://webl.ink) 。
 
-[**Introduction in English**](README.md)
+[**English Introduction**](README.md)
 
 ## 使用方法
 
@@ -104,6 +104,12 @@ VITE_WEBSOCKET_URL=your-websocket-url
 turn:turn1.example.com:3478|user1|pass1|longterm
 turns:turn2.example.com:5349|user2|pass2|hmac
 ```
+
+### 局域网内使用
+
+应用目前支持在非安全环境下局域网内使用，局域网内使用时，请确保你的设备在同一个局域网内，并且防火墙没有阻止 P2P 连接。
+
+并同时运行 [weblink-ws-server](https://github.com/99percentpeople/weblink-ws-server) 以支持 WEBSOCKET 连接。
 
 ## 贡献
 
