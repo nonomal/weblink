@@ -177,8 +177,12 @@
     "no_support_description": "Please use this function in a secure context"
   },
   "browser_unsupported": {
-    "title": "Sorry, your browser is not supported.",
-    "description": "Please use a modern browser like Chrome, Firefox, Safari, Edge, or Opera."
+    "title": "Sorry, your browser is not supported",
+    "reasons": {
+      "browser_version_too_low": "Your browser version is too low",
+      "browser_does_not_support_webrtc": "Your browser does not support WebRTC"
+    },
+    "description": "Please use a modern browser like Chrome, Firefox, Safari, Edge, or Opera. Or turn on the experimental WebRTC features in your browser"
   },
   "common": {
     "theme_toggle": {

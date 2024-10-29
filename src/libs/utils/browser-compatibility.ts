@@ -68,7 +68,7 @@ function compareVersions(current: string, target: string) {
   return false;
 }
 
-function checkBrowserSupport() {
+export function checkBrowserSupport() {
   const { engine, version } = getBrowserEngineInfo();
 
   const minVersions = {
@@ -90,4 +90,10 @@ function checkBrowserSupport() {
   );
 }
 
-export default checkBrowserSupport;
+export function isWebRTCAvailable() {
+  return (
+    "RTCPeerConnection" in window ||
+    "webkitRTCPeerConnection" in window ||
+    "mozRTCPeerConnection" in window
+  );
+}
