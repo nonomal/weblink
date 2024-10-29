@@ -33,7 +33,19 @@ const constraints = {
   },
 } satisfies MediaStreamConstraints;
 
-export default function Message() {
+export default function Video() {
+  if (!navigator.mediaDevices) {
+    return (
+      <div class="mx-auto flex min-h-[calc(100%_-_3rem)] flex-col items-center
+        justify-center gap-8 p-4 ">
+        <h2 class="max-6-xs text-6xl font-thin uppercase">{t("video.no_support")}</h2>
+        <p class="text-sm text-muted-foreground">
+          {t("video.no_support_description")}
+        </p>
+      </div>
+    );
+  }
+
   const { roomStatus, remoteStreams } = useWebRTC();
   const openScreen = async () => {
     const local =
@@ -70,7 +82,6 @@ export default function Message() {
   const closeStream = async () => {
     setDisplayStream(null);
   };
-
 
   return (
     <div class="flex flex-col gap-2">

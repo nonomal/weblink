@@ -172,7 +172,9 @@
       "screen": "Screen",
       "camera": "Camera"
     },
-    "no_stream": "No Stream"
+    "no_stream": "No Stream",
+    "no_support": "No Support",
+    "no_support_description": "Please use this function in a secure context"
   },
   "browser_unsupported": {
     "title": "Sorry, your browser is not supported.",

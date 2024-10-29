@@ -116,7 +116,15 @@ export class FirebaseClientService
     const roomData = roomSnapshot.val();
     let passwordHash = null;
     if (this.password) {
-      passwordHash = await hashPassword(this.password);
+      try {
+        passwordHash = await hashPassword(this.password);
+      } catch (error) {
+        console.error(error);
+        if (error instanceof Error) {
+          toast.error(error.message);
+        }
+        this.password = null;
+      }
     }
     if (!roomData && this.password) {
       await update(this.roomRef, { passwordHash });

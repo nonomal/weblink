@@ -45,10 +45,12 @@ import {
   setAppOptions,
 } from "./options";
 import { MetaProvider, Style } from "@solidjs/meta";
-import { cacheManager } from "./libs/services/cache-serivce";
 import { Input } from "./components/ui/input";
 let wakeLock: WakeLockSentinel | null = null;
 const requestWakeLock = async () => {
+  if (!navigator.wakeLock) {
+    return;
+  }
   if (wakeLock && wakeLock.released === false) {
     return;
   }

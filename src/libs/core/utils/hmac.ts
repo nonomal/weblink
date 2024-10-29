@@ -2,6 +2,11 @@ export async function generateHMAC(
   key: string,
   message: string,
 ): Promise<string> {
+  if (!crypto.subtle) {
+    throw new Error(
+      "Web Crypto API is not supported, please use in a secure context",
+    );
+  }
   const encoder = new TextEncoder();
   const keyData = encoder.encode(key);
   const messageData = encoder.encode(message);

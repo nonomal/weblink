@@ -113,6 +113,44 @@ const createComfirmDialog = () => {
 };
 const columnHelper = createColumnHelper<FileMetaData>();
 
+const StorageStatus = () => {
+  if (!navigator.storage) {
+    return <></>;
+  }
+
+  const [storage, setStorage] =
+    createSignal<StorageEstimate | null>(null);
+
+  createEffect(async () => {
+    if (Object.values(cacheManager.caches).length >= 0) {
+      const estimate = await navigator.storage.estimate();
+      setStorage(estimate);
+    }
+  });
+
+  return (
+    <Show when={storage()}>
+      {(storage) => (
+        <Progress
+          value={storage().usage}
+          maxValue={storage().quota}
+          getValueLabel={({ value, max }) =>
+            t("cache.usage", {
+              value: formatBtyeSize(value),
+              max: formatBtyeSize(max),
+              remaining: formatBtyeSize(max - value),
+            })
+          }
+        >
+          <div class="muted mb-1 flex justify-end text-sm">
+            <ProgressValueLabel />
+          </div>
+        </Progress>
+      )}
+    </Show>
+  );
+};
+
 export default function File() {
   const {
     open: openPreviewDialog,
@@ -355,16 +393,6 @@ export default function File() {
     }),
   ];
 
-  const [storage, setStorage] =
-    createSignal<StorageEstimate | null>(null);
-
-  createEffect(async () => {
-    if (Object.values(cacheManager.caches).length >= 0) {
-      const estimate = await navigator.storage.estimate();
-      setStorage(estimate);
-    }
-  });
-
   const [columnFilters, setColumnFilters] =
     createSignal<ColumnFiltersState>([]);
 
@@ -460,25 +488,7 @@ export default function File() {
           bg-background/80 py-4"
       >
         <h2 class="h2">{t("cache.title")}</h2>
-        <Show when={storage()}>
-          {(storage) => (
-            <Progress
-              value={storage().usage}
-              maxValue={storage().quota}
-              getValueLabel={({ value, max }) =>
-                t("cache.usage", {
-                  value: formatBtyeSize(value),
-                  max: formatBtyeSize(max),
-                  remaining: formatBtyeSize(max - value),
-                })
-              }
-            >
-              <div class="muted mb-1 flex justify-end text-sm">
-                <ProgressValueLabel />
-              </div>
-            </Progress>
-          )}
-        </Show>
+        <StorageStatus />
         <div class="sticky top-12 z-10 flex gap-2 py-2 backdrop-blur">
           <Show
             when={Object.keys(rowSelection()).length !== 0}

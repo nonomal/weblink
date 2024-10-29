@@ -173,7 +173,9 @@
       "screen": "屏幕",
       "camera": "摄像头"
     },
-    "no_stream": "没有流"
+    "no_stream": "没有流",
+    "no_support": "不支持",
+    "no_support_description": "请在安全的上下文中使用此功能"
   },
   "browser_unsupported": {
     "title": "抱歉，您的浏览器不受支持。",

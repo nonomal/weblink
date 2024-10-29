@@ -1061,6 +1061,9 @@ const createResetOptionsDialog = () => {
 };
 
 const MediaSetting: Component = () => {
+  if (!navigator.mediaDevices) {
+    return <></>;
+  }
   const cameras = createCameras();
   const microphones = createMicrophones();
   const speakers = createSpeakers();

@@ -122,8 +122,18 @@ export class WebSocketClientService
 
     wsUrl.searchParams.append("room", this.roomId);
     if (this.password) {
-      const hash = await hashPassword(this.password);
-      wsUrl.searchParams.append("pwd", hash);
+      try {
+        const hash = await hashPassword(this.password);
+        wsUrl.searchParams.append("pwd", hash);
+      } catch (error) {
+        console.error(error);
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error("failed to hash password");
+        }
+        this.password = null;
+      }
     }
     const socket = new WebSocket(wsUrl);
     this.dispatchEvent("status-change", "connecting");

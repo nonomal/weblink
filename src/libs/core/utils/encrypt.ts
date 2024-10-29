@@ -4,6 +4,11 @@ export async function hashPassword(
   iterations: number = 100000,
   hash: string = "SHA-256",
 ): Promise<string> {
+  if (!crypto.subtle) {
+    throw new Error(
+      "Web Crypto API is not supported, please use in a secure context",
+    );
+  }
   // generate random salt
   const salt = crypto.getRandomValues(
     new Uint8Array(saltLength),
@@ -55,6 +60,11 @@ export async function comparePasswordHash(
   iterations: number = 100000,
   hash = "SHA-256",
 ): Promise<boolean> {
+  if (!crypto.subtle) {
+    throw new Error(
+      "Web Crypto API is not supported, please use in a secure context",
+    );
+  }
   if (!isValidBase64String(storedHash)) {
     throw new Error("Invalid Base64 string");
   }
@@ -109,6 +119,11 @@ export async function encryptData(
   password: string,
   data: string,
 ): Promise<string> {
+  if (!crypto.subtle) {
+    throw new Error(
+      "Web Crypto API is not supported, please use in a secure context",
+    );
+  }
   // create random salt and iv
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -157,6 +172,11 @@ async function deriveKey(
   keyMaterial: CryptoKey,
   salt: Uint8Array,
 ): Promise<CryptoKey> {
+  if (!crypto.subtle) {
+    throw new Error(
+      "Web Crypto API is not supported, please use in a secure context",
+    );
+  }
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
@@ -175,6 +195,11 @@ export async function decryptData(
   password: string,
   encryptedData: string,
 ): Promise<string> {
+  if (!crypto.subtle) {
+    throw new Error(
+      "Web Crypto API is not supported, please use in a secure context",
+    );
+  }
   // decode base64 data
   const combinedData = Uint8Array.from(
     atob(encryptedData),
@@ -203,4 +228,8 @@ export async function decryptData(
   // decode data to string
   const decoder = new TextDecoder();
   return decoder.decode(decryptedData);
+}
+
+export function checkCryptoAvailable() {
+  return !!crypto.subtle;
 }
