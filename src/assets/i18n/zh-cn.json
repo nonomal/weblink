@@ -217,7 +217,17 @@
     "global_mute": "全局静音",
     "global_unmute": "全局取消静音",
     "reset_layout": "重置布局",
-    "compact_layout": "紧凑布局"
+    "compact_layout": "紧凑布局",
+    "loading_state": {
+      "initial": "初始化中...",
+      "loading": "加载中...",
+      "canplay": "准备播放",
+      "playing": "播放中",
+      "waiting": "缓冲中...",
+      "stalled": "连接中断，正在重试...",
+      "error": "加载失败",
+      "retry": "重试"
+    }
   },
   "browser_unsupported": {
     "title": "抱歉，您的浏览器不受支持",

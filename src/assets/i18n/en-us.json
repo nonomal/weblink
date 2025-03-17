@@ -39,7 +39,6 @@
         "title": "Share Servers with Others",
         "description": "Share the STUN and TURN servers with others when generating the join URL"
       },
-
       "websocket_url": {
         "title": "Websocket URL",
         "description": "Change the Websocket URL of the app, this option is only available when the backend is WebSocket"
@@ -218,7 +217,17 @@
     "global_mute": "Global Mute",
     "global_unmute": "Global Unmute",
     "reset_layout": "Reset Layout",
-    "compact_layout": "Compact Layout"
+    "compact_layout": "Compact Layout",
+    "loading_state": {
+      "initial": "Initializing...",
+      "loading": "Loading...",
+      "canplay": "Ready to play",
+      "playing": "Playing",
+      "waiting": "Buffering...",
+      "stalled": "Connection interrupted, retrying...",
+      "error": "Failed to load",
+      "retry": "Retry"
+    }
   },
   "browser_unsupported": {
     "title": "Sorry, your browser is not supported",

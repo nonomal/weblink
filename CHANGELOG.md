@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.2] - 2025-03-17
+
+### Improvements
+
+- Improve the video loading experience 改善视频加载体验
+
 ## [0.11.1] - 2025-02-05
 
 ### New Features

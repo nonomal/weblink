@@ -1,6 +1,7 @@
 import {
   IconVideoCamOff,
   IconVolumeUpFilled,
+  IconSync,
 } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/libs/cn";
@@ -17,6 +18,9 @@ import {
 } from "solid-js";
 import { ClientAvatar } from "./client-avatar";
 import { createMediaTracks } from "@/libs/hooks/tracks";
+import { Spinner } from "./spinner";
+import { Button } from "@/components/ui/button";
+import { t } from "@/i18n";
 
 const VideoContext = createContext<{
   videoRef: Accessor<HTMLVideoElement | null>;
@@ -41,11 +45,38 @@ export const VideoDisplay = (
     name: string;
     muted?: boolean;
     avatar?: string;
+    onLoadingStateChange?: (
+      state:
+        | "initial"
+        | "loading"
+        | "canplay"
+        | "playing"
+        | "waiting"
+        | "stalled"
+        | "error",
+    ) => void;
   } & ParentProps,
 ) => {
   const stream = createMemo(() => props.stream ?? null);
 
   const tracks = createMediaTracks(stream);
+
+  const [isLoaded, setIsLoaded] = createSignal(false);
+  const [loadingState, setLoadingState] = createSignal<
+    | "initial"
+    | "loading"
+    | "canplay"
+    | "playing"
+    | "waiting"
+    | "stalled"
+    | "error"
+  >("initial");
+
+  // 监听加载状态变化并调用回调
+  createEffect(() => {
+    const currentState = loadingState();
+    props.onLoadingStateChange?.(currentState);
+  });
 
   const audioTracks = createMemo(() =>
     tracks().filter((track) => track.kind === "audio"),
@@ -91,6 +122,24 @@ export const VideoDisplay = (
     }
   });
 
+  // 重试加载视频
+  const retryLoadVideo = () => {
+    setLoadingState("initial");
+    setIsLoaded(false);
+
+    // 重新设置视频源
+    const video = videoRef();
+    if (video) {
+      const currentStream = videoStream();
+      video.srcObject = null;
+      setTimeout(() => {
+        if (video && currentStream) {
+          video.srcObject = currentStream;
+        }
+      }, 100);
+    }
+  };
+
   return (
     <VideoContext.Provider
       value={{ videoRef, videoTrack, audioTracks }}
@@ -124,7 +173,84 @@ export const VideoDisplay = (
               class="pointer-events-none absolute inset-0 size-full bg-black
                 object-contain"
               ref={setVideoRef}
+              onLoadedMetadata={() => {
+                setIsLoaded(true);
+                setLoadingState("loading");
+              }}
+              onCanPlay={() => {
+                setLoadingState("canplay");
+              }}
+              onPlaying={() => {
+                setLoadingState("playing");
+              }}
+              onWaiting={() => {
+                setLoadingState("waiting");
+              }}
+              onStalled={() => {
+                setLoadingState("stalled");
+              }}
+              onProgress={() => {
+                // 视频正在下载中
+                if (
+                  loadingState() === "waiting" ||
+                  loadingState() === "stalled"
+                ) {
+                  setLoadingState("loading");
+                }
+              }}
+              onSuspend={() => {
+                // 浏览器暂停获取媒体数据
+                console.log("Video download suspended");
+              }}
+              onAbort={() => {
+                // 视频下载中断
+                console.log("Video download aborted");
+              }}
+              onError={(e) => {
+                setIsLoaded(true);
+                setLoadingState("error");
+                console.error("Video error:", e);
+              }}
             />
+            <Show
+              when={
+                !isLoaded() ||
+                loadingState() === "waiting" ||
+                loadingState() === "stalled" ||
+                loadingState() === "error"
+              }
+            >
+              <div class="absolute inset-0 flex items-center justify-center">
+                <div class="flex flex-col items-center gap-2">
+                  <Show when={loadingState() !== "error"}>
+                    <Spinner class="bg-white" size="md" />
+                  </Show>
+                  <div class="rounded bg-black/50 px-2 py-1 text-xs text-white/80">
+                    {loadingState() === "initial" &&
+                      t("video.loading_state.initial")}
+                    {loadingState() === "loading" &&
+                      t("video.loading_state.loading")}
+                    {loadingState() === "waiting" &&
+                      t("video.loading_state.waiting")}
+                    {loadingState() === "stalled" &&
+                      t("video.loading_state.stalled")}
+                    {loadingState() === "error" &&
+                      t("video.loading_state.error")}
+                  </div>
+                  <Show when={loadingState() === "error"}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      class="mt-2 bg-black/50 text-white"
+                      onClick={retryLoadVideo}
+                    >
+                      <IconSync class="mr-1 size-4" />
+                      {t("video.loading_state.retry")}
+                    </Button>
+                  </Show>
+                </div>
+              </div>
+            </Show>
           </Show>
         </Show>
         <div class="absolute left-1 top-1 flex gap-1">
