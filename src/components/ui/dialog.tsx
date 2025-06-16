@@ -44,9 +44,9 @@ const DialogOverlay = <T extends ValidComponent = "div">(
   return (
     <DialogPrimitive.Overlay
       class={cn(
-        `fixed inset-0 z-50 bg-background/80 backdrop-blur-sm
-        data-[expanded]:animate-in data-[closed]:animate-out
-        data-[closed]:fade-out-0 data-[expanded]:fade-in-0`,
+        `data-[expanded]:animate-in data-[closed]:animate-out
+        data-[closed]:fade-out-0 data-[expanded]:fade-in-0 fixed
+        inset-0 z-50 bg-black/50`,
         props.class,
       )}
       {...rest}
@@ -72,29 +72,26 @@ const DialogContent = <T extends ValidComponent = "div">(
       <DialogOverlay />
       <DialogPrimitive.Content
         class={cn(
-          `fixed left-1/2 top-1/2 z-50 grid max-h-screen w-full
-          max-w-lg lg:max-w-xl xl:max-w-2xl 2xl:max-w-3xl -translate-x-1/2 -translate-y-1/2 gap-4
-          overflow-y-auto border bg-background p-6 shadow-lg
-          duration-200 data-[expanded]:animate-in
+          `bg-background data-[expanded]:animate-in
           data-[closed]:animate-out data-[closed]:fade-out-0
           data-[expanded]:fade-in-0 data-[closed]:zoom-out-95
-          data-[expanded]:zoom-in-95
-          data-[closed]:slide-out-to-left-1/2
-          data-[closed]:slide-out-to-top-[48%]
-          data-[expanded]:slide-in-from-left-1/2
-          data-[expanded]:slide-in-from-top-[48%] sm:rounded-lg`,
+          data-[expanded]:zoom-in-95 fixed top-1/2 left-1/2 z-50 grid
+          w-full max-w-[calc(100%-2rem)] -translate-x-1/2
+          -translate-y-1/2 gap-4 rounded-lg border p-6 shadow-lg
+          duration-200 sm:max-w-lg`,
           props.class,
         )}
         {...rest}
       >
         {props.children}
         <DialogPrimitive.CloseButton
-          class="absolute right-4 top-4 rounded-sm opacity-70
-            ring-offset-background transition-opacity hover:opacity-100
-            focus:outline-none focus:ring-2 focus:ring-ring
-            focus:ring-offset-2 disabled:pointer-events-none
+          class="ring-offset-background focus:ring-ring
             data-[expanded]:bg-accent
-            data-[expanded]:text-muted-foreground"
+            data-[expanded]:text-muted-foreground absolute top-4 right-4
+            rounded-xs opacity-70 transition-opacity hover:opacity-100
+            focus:ring-2 focus:ring-offset-2 focus:outline-hidden
+            disabled:pointer-events-none [&_svg]:pointer-events-none
+            [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -160,7 +157,7 @@ const DialogTitle = <T extends ValidComponent = "h2">(
   return (
     <DialogPrimitive.Title
       class={cn(
-        "text-lg font-semibold leading-none tracking-tight",
+        "text-lg leading-none font-semibold tracking-tight",
         props.class,
       )}
       {...rest}
@@ -184,7 +181,7 @@ const DialogDescription = <T extends ValidComponent = "p">(
   return (
     <DialogPrimitive.Description
       class={cn(
-        "text-sm text-muted-foreground",
+        "text-muted-foreground text-sm",
         props.class,
       )}
       {...rest}

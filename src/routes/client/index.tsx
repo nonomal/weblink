@@ -30,10 +30,10 @@ const Client: Component = (props) => {
       <QRCodeDialogComponent />
 
       <div
-        class="absolute left-1/2 top-1/2 flex max-h-[100vh] w-full max-w-xs
-          -translate-x-1/2 -translate-y-1/2 flex-col items-stretch
-          gap-2 overflow-hidden rounded-lg border border-border/50
-          bg-background/50 p-4 backdrop-blur"
+        class="border-border/50 bg-background/50 absolute top-1/2 left-1/2
+          flex max-h-[100vh] w-full max-w-xs -translate-x-1/2
+          -translate-y-1/2 flex-col items-stretch gap-2
+          overflow-hidden rounded-lg border p-4 backdrop-blur"
       >
         <Switch>
           <Match
@@ -48,7 +48,7 @@ const Client: Component = (props) => {
                   room: roomStatus.roomId,
                 })}
               </p>
-              <p class="text-sm text-muted-foreground">
+              <p class="text-muted-foreground text-sm">
                 {t("client.index.after_join.description")}
               </p>
             </div>
@@ -73,7 +73,7 @@ const Client: Component = (props) => {
                 {t("client.index.leave_room")}
               </span>
             </Button>
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
               {t("client.index.after_join.tip")}
             </p>
           </Match>
@@ -87,7 +87,7 @@ const Client: Component = (props) => {
               <p class="text-xl font-bold">
                 {t("client.index.connecting.title")}
               </p>
-              <p class="text-sm text-muted-foreground">
+              <p class="text-muted-foreground text-sm">
                 {t("client.index.connecting.description")}
               </p>
               <Spinner
@@ -106,7 +106,7 @@ const Client: Component = (props) => {
               <p class="text-xl font-bold">
                 {t("client.index.before_join.title")}
               </p>
-              <p class="text-sm text-muted-foreground">
+              <p class="text-muted-foreground text-sm">
                 {t("client.index.before_join.description")}
               </p>
             </div>

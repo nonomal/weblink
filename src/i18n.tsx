@@ -51,7 +51,10 @@ const fallback = translator(
 
 const t = (path: string, ...args: any[]): string =>
   // @ts-ignore
-  translate(path, ...args) ?? fallback(path, ...args);
+  translate(path, ...args) ??
+  // @ts-ignore
+  fallback(path, ...args) ??
+  path;
 
 const LocaleSelector = () => {
   return (

@@ -5,7 +5,7 @@ import type { VitePWAOptions } from "vite-plugin-pwa";
 import solidSvg from "vite-plugin-solid-svg";
 import { compression } from "vite-plugin-compression2";
 import { readFileSync } from "fs";
-
+import tailwindcss from "@tailwindcss/vite";
 const packageJson = JSON.parse(
   readFileSync("./package.json", "utf-8"),
 );
@@ -101,6 +101,7 @@ export default defineConfig({
     }),
     VitePWA(pwaOptions),
     compression(),
+    tailwindcss(),
   ],
   esbuild: {},
   define: {

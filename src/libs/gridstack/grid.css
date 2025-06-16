@@ -1,3 +1,5 @@
+@reference "../../global.css";
+
 .grid-stack-item-removing > .grid-stack-item-content {
   @apply blur-sm;
 }
@@ -7,5 +9,5 @@
 }
 
 .grid-stack-placeholder > .placeholder-content {
-  @apply rounded-lg bg-muted/50 backdrop-blur !important;
+  @apply bg-muted/50 rounded-lg backdrop-blur!;
 }

@@ -111,7 +111,7 @@ export default function Settings() {
       <ResetOptionsDialogComponent />
       <ClearServiceWorkerCacheDialogComponent />
       <div
-        class="container relative bg-background/80 backdrop-blur
+        class="bg-background/80 relative container px-4 backdrop-blur
           [mask:url(#bg-image-mask)]"
       >
         <svg width="0" height="0">
@@ -139,7 +139,7 @@ export default function Settings() {
           </defs>
         </svg>
         <div
-          class="columns-1 space-y-4 py-4 [column-gap:2rem]
+          class="columns-1 space-y-4 [column-gap:2rem] py-4
             [column-rule:1px_solid_hsl(var(--border))] lg:columns-2
             [&>*]:break-inside-avoid-column"
         >
@@ -200,8 +200,8 @@ export default function Settings() {
                   }
                   return (
                     <div
-                      class="pointer-events-none absolute inset-0 flex items-center
-                        justify-center text-sm text-muted-foreground/50"
+                      class="text-muted-foreground/50 pointer-events-none absolute
+                        inset-0 flex items-center justify-center text-sm"
                     >
                       {event ? (
                         isFile ? (
@@ -266,8 +266,8 @@ export default function Settings() {
                 />
 
                 <div
-                  class="opacity-1 h-24 content-center rounded-lg bg-muted
-                    text-center text-sm md:h-32"
+                  class="bg-muted h-24 content-center rounded-lg text-center text-sm
+                    opacity-1 md:h-32"
                 />
               </DropArea>
 
@@ -359,7 +359,7 @@ export default function Settings() {
               {t("setting.connection.stun_servers.title")}
             </Label>
             <Textarea
-              class="resize-none overflow-x-auto text-nowrap scrollbar-thin"
+              class="scrollbar-thin resize-none overflow-x-auto text-nowrap"
               placeholder="stun:stun.l.google.com:19302"
               ref={(ref) => {
                 createEffect(() => {
@@ -497,7 +497,7 @@ export default function Settings() {
               {t("setting.connection.turn_servers.title")}
             </Label>
             <Textarea
-              class="resize-none overflow-x-auto text-nowrap scrollbar-thin"
+              class="scrollbar-thin resize-none overflow-x-auto text-nowrap"
               ref={(ref) => {
                 createEffect(() => {
                   textareaAutoResize(
@@ -808,7 +808,7 @@ export default function Settings() {
               )}
             </p>
             <Show when={!navigator.clipboard}>
-              <p class="text-xs text-destructive-foreground">
+              <p class="text-destructive-foreground text-xs">
                 {t(
                   "setting.sender.enable_clipboard.unsupported",
                 )}

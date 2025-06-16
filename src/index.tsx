@@ -1,5 +1,5 @@
 /* @refresh reload */
-import "@/index.css";
+import "@/global.css";
 import { render } from "solid-js/web";
 import { Router } from "@solidjs/router";
 import { lazy } from "solid-js";
