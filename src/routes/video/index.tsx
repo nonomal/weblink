@@ -17,7 +17,6 @@ import {
 import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
 import {
-  IconCropSquare,
   IconDelete,
   IconFullscreen,
   IconMeetingRoom,
@@ -34,6 +33,7 @@ import {
   IconVolumeOff,
   IconVolumeUp,
 } from "@/components/icons";
+import { GripIcon } from "lucide-solid";
 import { cn } from "@/libs/cn";
 import { ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
@@ -121,7 +121,7 @@ export default function Video() {
     () =>
       ({
         draggable: {
-          handle: ".grid-item-content",
+          handle: ".custom-drag-handle",
           appendTo: "body",
           scroll: false,
         },
@@ -132,7 +132,7 @@ export default function Video() {
         minRow: 1,
         float: float(),
         resizable: {
-          handles: "all",
+          handles: "se",
         },
         acceptWidgets: true,
         removable: "[data-gs-removal-zone]",
@@ -156,26 +156,79 @@ export default function Video() {
 
   return (
     <>
+      <style>{`
+        .grid-stack-item:hover .custom-drag-handle {
+          opacity: 1 !important;
+        }
+        
+        .custom-drag-handle:hover {
+          background-color: rgba(0, 0, 0, 0.7) !important;
+        }
+        
+        .grid-stack-item > .ui-resizable-handle {
+          opacity: 0;
+          transition: all 0.3s ease;
+        }
+        
+        .grid-stack-item:hover > .ui-resizable-handle {
+          opacity: 1;
+        }
+        
+        .grid-stack-item > .ui-resizable-n,
+        .grid-stack-item > .ui-resizable-e,
+        .grid-stack-item > .ui-resizable-s,
+        .grid-stack-item > .ui-resizable-w,
+        .grid-stack-item > .ui-resizable-ne,
+        .grid-stack-item > .ui-resizable-nw,
+        .grid-stack-item > .ui-resizable-sw {
+          display: none !important;
+        }
+        
+        .grid-stack-item > .ui-resizable-se {
+          width: 20px !important;
+          height: 20px !important;
+          background: transparent !important;
+          border: none !important;
+          position: absolute !important;
+          bottom: 0 !important;
+          right: 0 !important;
+          top: auto !important;
+          left: auto !important;
+          transform: none !important;
+          margin: 0 !important;
+          border-bottom: 4px solid transparent !important;
+          border-right: 4px solid transparent !important;
+          border-bottom-right-radius: 6px !important;
+          transition: all 0.2s ease !important;
+          cursor: se-resize !important;
+          z-index: 10 !important;
+        }
+        
+        .grid-stack-item:hover > .ui-resizable-se {
+          border-bottom-color: var(--color-muted-foreground) !important;
+          border-right-color: var(--color-muted-foreground) !important;
+        }
+      `}</style>
       <div
         class={cn(
           "fixed bottom-8 left-1/2 size-28 -translate-x-1/2",
-          "rounded-xl border-2 border-dashed border-destructive",
-          "bg-destructive/10 transition-all hover:border-destructive/80",
-          `visible z-10 touch-manipulation opacity-100
-          hover:bg-destructive/20`,
+          "border-destructive rounded-xl border-2 border-dashed",
+          "bg-destructive/10 hover:border-destructive/80 transition-all",
+          `hover:bg-destructive/20 visible z-10 touch-manipulation
+          opacity-100`,
           !dragging() &&
             "invisible scale-[0.95] cursor-move opacity-0",
         )}
         data-gs-removal-zone
       >
-        <div class="flex h-full items-center justify-center text-destructive">
+        <div class="text-destructive flex h-full items-center justify-center">
           <IconDelete class="size-8" />
         </div>
       </div>
-      <div class="flex size-full flex-col overflow-y-auto scrollbar-none">
+      <div class="scrollbar-none flex size-full flex-col overflow-y-auto">
         <div
-          class="sticky top-0 z-10 flex h-12 w-full items-center gap-2
-            border-b border-border bg-background/80 px-4 backdrop-blur
+          class="border-border bg-background/80 sticky top-0 z-10 flex h-12
+            w-full items-center gap-2 border-b px-4 backdrop-blur
             sm:top-0"
         >
           <h4 class="h4">
@@ -336,7 +389,15 @@ export default function Video() {
             id={clientProfile.clientId}
             noRemovable
           >
-            <GridItemContent class="relative rounded-lg bg-muted shadow-lg">
+            <GridItemContent class="bg-muted relative rounded-lg shadow-lg">
+              <div
+                class="custom-drag-handle absolute top-2 right-2 z-10 flex h-6 w-6
+                  cursor-move items-center justify-center rounded bg-black/50
+                  text-white opacity-0 transition-opacity hover:opacity-100"
+              >
+                <GripIcon class="size-4" />
+              </div>
+
               <VideoDisplay
                 class="absolute inset-0"
                 stream={localStream()}
@@ -348,9 +409,7 @@ export default function Video() {
                   client={roomStatus.profile ?? undefined}
                   class={cn(
                     "absolute top-1 flex gap-1",
-                    isMobile()
-                      ? "right-1"
-                      : "left-1/2 -translate-x-1/2",
+                    "left-1/2 -translate-x-1/2",
                   )}
                 />
               </VideoDisplay>
@@ -373,7 +432,15 @@ export default function Video() {
                   h={6}
                   id={client.clientId}
                 >
-                  <GridItemContent class="relative rounded-lg bg-muted shadow-lg">
+                  <GridItemContent class="bg-muted relative rounded-lg shadow-lg">
+                    <div
+                      class="custom-drag-handle absolute top-2 right-2 z-10 flex h-6 w-6
+                        cursor-move items-center justify-center rounded bg-black/50
+                        text-white opacity-0 transition-opacity hover:opacity-100"
+                    >
+                      <GripIcon class="size-4" />
+                    </div>
+
                     <VideoDisplay
                       class="absolute inset-0"
                       stream={client.stream}
@@ -384,9 +451,7 @@ export default function Video() {
                       <RemoteToolbar
                         class={cn(
                           "absolute top-1 flex gap-1",
-                          isMobile()
-                            ? "right-1"
-                            : "left-1/2 -translate-x-1/2",
+                          "left-1/2 -translate-x-1/2",
                         )}
                         client={client}
                       />
