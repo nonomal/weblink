@@ -193,9 +193,8 @@ body::after {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: hsl(
-    var(--background) / var(--background-image-opacity)
-  );
+  background-color: var(--background);
+  opacity: var(--background-image-opacity);
   z-index: -1;
 }
 
