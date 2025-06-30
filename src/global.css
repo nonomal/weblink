@@ -7,7 +7,7 @@
 @import "@fontsource-variable/roboto-mono";
 @import "./styles/pswp.css";
 
-@custom-variant dark (&:where(.dark, [data-kb-theme="dark"]));
+@custom-variant dark (&:where(.dark *, [data-kb-theme="dark"] *));
 
 :root {
   --radius: 0.625rem;

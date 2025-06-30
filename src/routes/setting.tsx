@@ -79,6 +79,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createAsync } from "@solidjs/router";
 
 export default function Settings() {
   const { open, Component: AboutDialogComponent } =
@@ -104,6 +105,36 @@ export default function Settings() {
   const turnServersValue = createMemo(() => {
     return stringifyTurnServers(appOptions.servers.turns);
   });
+
+  const [websocketChecking, setWebsocketChecking] =
+    createSignal(false);
+
+  const handleCheckWebsocketUrl = async () => {
+    setWebsocketChecking(true);
+    // change ws:// or wss:// to http:// or https://
+    let message = "";
+    try {
+      const ws = new WebSocket(appOptions.websocketUrl!);
+      message = await new Promise((resolve, reject) => {
+        ws.onopen = () =>
+          resolve(
+            `${appOptions.websocketUrl} is available`,
+          );
+        ws.onerror = () => reject(new Error("failed"));
+      });
+      ws.close();
+    } catch (error) {
+      if (error instanceof Error) {
+        message = error.message;
+      } else {
+        message = "unknown error";
+      }
+    } finally {
+      setWebsocketChecking(false);
+    }
+    toast.info(message);
+    return message;
+  };
 
   return (
     <>
@@ -717,69 +748,34 @@ export default function Settings() {
                 )}
               </p>
 
-              <Show
-                when={
-                  appOptions.websocketUrl !==
-                  defaultWebsocketUrl
-                }
-              >
-                {(_) => {
-                  const [disabled, setDisabled] =
-                    createSignal(false);
-                  return (
-                    <div class="flex gap-2 self-end">
-                      <Button
-                        variant="destructive"
-                        disabled={disabled()}
-                        onClick={() => {
-                          setAppOptions(
-                            "websocketUrl",
-                            defaultWebsocketUrl,
-                          );
-                        }}
-                      >
-                        {t("common.action.reset")}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        disabled={disabled()}
-                        onClick={async () => {
-                          setDisabled(true);
-                          // change ws:// or wss:// to http:// or https://
-                          let message = "";
-                          try {
-                            const ws = new WebSocket(
-                              appOptions.websocketUrl!,
-                            );
-                            message = await new Promise(
-                              (resolve, reject) => {
-                                ws.onopen = () =>
-                                  resolve("success");
-                                ws.onerror = () =>
-                                  reject(
-                                    new Error("failed"),
-                                  );
-                              },
-                            );
-                            ws.close();
-                          } catch (error) {
-                            if (error instanceof Error) {
-                              message = error.message;
-                            } else {
-                              message = "unknown error";
-                            }
-                          } finally {
-                            setDisabled(false);
-                          }
-                          toast.info(message);
-                        }}
-                      >
-                        {t("common.action.test")}
-                      </Button>
-                    </div>
-                  );
-                }}
-              </Show>
+              <div class="flex gap-2 self-end">
+                <Show
+                  when={
+                    appOptions.websocketUrl !==
+                    defaultWebsocketUrl
+                  }
+                >
+                  <Button
+                    variant="destructive"
+                    disabled={websocketChecking()}
+                    onClick={() => {
+                      setAppOptions(
+                        "websocketUrl",
+                        defaultWebsocketUrl,
+                      );
+                    }}
+                  >
+                    {t("common.action.reset")}
+                  </Button>
+                </Show>
+                <Button
+                  variant="outline"
+                  disabled={websocketChecking()}
+                  onClick={() => handleCheckWebsocketUrl()}
+                >
+                  {t("common.action.test")}
+                </Button>
+              </div>
             </label>
           </Show>
 
