@@ -1,77 +1,92 @@
 import { cn } from "@/libs/cn";
-import type { ButtonRootProps } from "@kobalte/core/button";
-import { Button as ButtonPrimitive } from "@kobalte/core/button";
-import type { PolymorphicProps } from "@kobalte/core/polymorphic";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type { Component, ComponentProps } from "solid-js";
-import { createMemo, splitProps } from "solid-js";
+import { For, splitProps } from "solid-js";
 
 const spinnerVariants = cva(
-  "relative block opacity-[0.65]",
+  "relative inline-block aspect-square transform-gpu",
   {
     variants: {
+      variant: {
+        default: "[&>div]:bg-foreground",
+        primary: "[&>div]:bg-primary",
+        secondary: "[&>div]:bg-secondary",
+        destructive: "[&>div]:bg-destructive",
+        muted: "[&>div]:bg-muted-foreground",
+      },
       size: {
-        sm: "w-4 h-4",
-        md: "w-6 h-6",
-        lg: "w-8 h-8",
+        sm: "size-4",
+        default: "size-5",
+        lg: "size-8",
       },
     },
     defaultVariants: {
-      size: "sm",
+      variant: "default",
+      size: "default",
     },
   },
 );
 
 export interface SpinnerProps
-  extends ComponentProps<"span">,
-    VariantProps<typeof spinnerVariants> {}
+  extends ComponentProps<"div">,
+    Omit<VariantProps<typeof spinnerVariants>, "size"> {
+  className?: string;
+  size?:
+    | VariantProps<typeof spinnerVariants>["size"]
+    | number;
+}
+
+const leafNumber = 12;
 
 const Spinner: Component<SpinnerProps> = (props) => {
   const [local, rest] = splitProps(props, [
     "class",
     "size",
+    "variant",
   ]);
-  const bgClass = createMemo(
-    () => local.class?.match(/(?:dark:bg-|bg-)\S+/g) || [],
-  );
-  const filteredClass = createMemo(() => {
-    const filteredClasses = local.class
-      ?.replace(/(?:dark:bg-|bg-)\S+/g, "")
-      .trim();
-    return filteredClasses;
-  });
-
-  const leafNumber = 8;
 
   return (
-    <span
+    <div
+      role="status"
+      aria-label="Loading"
       class={cn(
-        spinnerVariants({
-          size: local.size,
-          class: filteredClass(),
-        }),
+        typeof local.size === "string"
+          ? spinnerVariants({
+              variant: local.variant,
+              size: local.size as VariantProps<
+                typeof spinnerVariants
+              >["size"],
+            })
+          : spinnerVariants({ variant: local.variant }),
+        local.class,
       )}
+      style={
+        typeof local.size === "number"
+          ? {
+              width: `${local.size}px`,
+              height: `${local.size}px`,
+            }
+          : undefined
+      }
       {...rest}
     >
-      {Array.from({ length: leafNumber }).map((_, i) => (
-        <span
-          class="absolute left-1/2 top-0 h-full animate-spinner-leaf-fade"
-          style={{
-            transform: `rotate(${i * (360 / leafNumber)}deg)`,
-            "animation-delay": `${-(leafNumber - 1 - i) * 100}ms`,
-            width: `${100 / leafNumber}%`,
-          }}
-        >
-          <span
-            class={cn(
-              "block h-[30%] w-full rounded-full",
-              bgClass(),
-            )}
-          ></span>
-        </span>
-      ))}
-    </span>
+      <For each={Array.from({ length: leafNumber })}>
+        {(_, i) => (
+          <div
+            class="animate-spinner absolute top-[4.4%] left-[46.5%] h-[24%]
+              w-[7%] origin-[center_190%] rounded-full opacity-[0.1]
+              will-change-transform"
+            style={{
+              transform: `rotate(${i() * (360 / leafNumber)}deg)`,
+              "animation-delay": `${(i() * (1 / leafNumber)).toFixed(3)}s`,
+            }}
+            aria-hidden="true"
+          />
+        )}
+      </For>
+      <span class="sr-only">Loading...</span>
+    </div>
   );
 };
 

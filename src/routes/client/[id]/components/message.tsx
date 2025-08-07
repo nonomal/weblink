@@ -365,7 +365,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                           }}
                         ></video>
                         <div
-                          class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                             rounded-lg bg-black/50 p-1 text-white/80"
                         >
                           <IconPlayArrow class="size-8" />
@@ -397,10 +397,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
             <Show
               when={props.message.transferStatus === "init"}
             >
-              <Spinner
-                size="sm"
-                class="bg-black dark:bg-white"
-              />
+              <Spinner size="sm" />
             </Show>
             <Show when={transferProgress()}>
               {(progress) => {
@@ -419,8 +416,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                     }
                   >
                     <div
-                      class="mb-1 flex justify-between gap-2 font-mono text-xs
-                        text-muted-foreground"
+                      class="text-muted-foreground mb-1 flex justify-between gap-2
+                        font-mono text-xs"
                     >
                       <ProgressLabel>
                         {progress().received !==
@@ -440,11 +437,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
             </Show>
             <Show when={localCacheStatus() === "merging"}>
               <div class="flex items-center gap-1">
-                <Spinner
-                  size="sm"
-                  class="bg-black dark:bg-white"
-                />
-                <p class="font-mono text-sm text-muted-foreground">
+                <Spinner size="sm" />
+                <p class="text-muted-foreground font-mono text-sm">
                   {t("common.file_table.status.merging")}
                 </p>
               </div>
@@ -836,18 +830,18 @@ export const MessageContent: Component<MessageCardProps> = (
       {(p) => (
         <li
           class={cn(
-            `flex select-none flex-col gap-1 rounded-md p-2 shadow
-            backdrop-blur sm:select-text`,
+            `flex flex-col gap-1 rounded-md p-2 shadow backdrop-blur
+            select-none sm:select-text`,
             clientProfile.clientId === props.message.client
               ? "self-end bg-lime-200/80 dark:bg-indigo-900/80"
-              : "self-start border border-border bg-background/80",
+              : "border-border bg-background/80 self-start border",
             local.class,
           )}
           {...p}
           {...other}
         >
           <PreviewDialogComponent />
-          <article class="w-full whitespace-pre-wrap break-all text-sm">
+          <article class="w-full text-sm break-all whitespace-pre-wrap">
             <Switch>
               <Match
                 when={
@@ -880,7 +874,7 @@ export const MessageContent: Component<MessageCardProps> = (
             <Show when={props.message.error}>
               {(error) => (
                 <Tooltip>
-                  <TooltipTrigger class="text-xs text-destructive">
+                  <TooltipTrigger class="text-destructive text-xs">
                     {t("client.message_error")}
                   </TooltipTrigger>
                   <TooltipContent>{error()}</TooltipContent>
@@ -935,8 +929,8 @@ export const MessageContent: Component<MessageCardProps> = (
             </Show>
           </div>
           <div
-            class="flex justify-end gap-1 self-end text-xs
-              text-muted-foreground"
+            class="text-muted-foreground flex justify-end gap-1 self-end
+              text-xs"
           >
             <p>{createTimeAgo(props.message.createdAt)}</p>
             <p>
@@ -954,7 +948,7 @@ export const MessageContent: Component<MessageCardProps> = (
                 <Match
                   when={props.message.status === "error"}
                 >
-                  <IconClose class="size-4 text-destructive" />
+                  <IconClose class="text-destructive size-4" />
                 </Match>
               </Switch>
             </p>

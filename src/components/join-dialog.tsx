@@ -274,10 +274,7 @@ export function JoinRoomButton(
                 }
                 fallback={<IconLogout class="size-6" />}
               >
-                <Spinner
-                  size="md"
-                  class="size-6 bg-black dark:bg-white"
-                />
+                <Spinner />
               </Show>
             </TooltipTrigger>
             <TooltipContent>

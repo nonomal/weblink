@@ -90,10 +90,7 @@ const Client: Component = (props) => {
               <p class="text-muted-foreground text-sm">
                 {t("client.index.connecting.description")}
               </p>
-              <Spinner
-                size="lg"
-                class="bg-black dark:bg-white"
-              />
+              <Spinner size="lg" />
             </div>
           </Match>
           <Match

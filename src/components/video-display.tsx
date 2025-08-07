@@ -151,8 +151,8 @@ export const VideoDisplay = (
           when={props.stream}
           fallback={
             <IconVideoCamOff
-              class="absolute left-1/2 top-1/2 size-1/2 -translate-x-1/2
-                -translate-y-1/2 text-muted-foreground/10"
+              class="text-muted-foreground/10 absolute top-1/2 left-1/2 size-1/2
+                -translate-x-1/2 -translate-y-1/2"
             />
           }
         >
@@ -160,7 +160,7 @@ export const VideoDisplay = (
             when={videoStream()}
             fallback={
               <ClientAvatar
-                class="absolute left-1/2 top-1/2 size-14 -translate-x-1/2
+                class="absolute top-1/2 left-1/2 size-14 -translate-x-1/2
                   -translate-y-1/2"
                 avatar={props.avatar}
                 name={props.name}
@@ -223,7 +223,7 @@ export const VideoDisplay = (
               <div class="absolute inset-0 flex items-center justify-center">
                 <div class="flex flex-col items-center gap-2">
                   <Show when={loadingState() !== "error"}>
-                    <Spinner class="bg-white" size="md" />
+                    <Spinner />
                   </Show>
                   <div class="rounded bg-black/50 px-2 py-1 text-xs text-white/80">
                     {loadingState() === "initial" &&
@@ -253,7 +253,7 @@ export const VideoDisplay = (
             </Show>
           </Show>
         </Show>
-        <div class="absolute left-1 top-1 flex gap-1">
+        <div class="absolute top-1 left-1 flex gap-1">
           <Badge
             variant="secondary"
             class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"

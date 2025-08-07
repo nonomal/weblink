@@ -42,7 +42,7 @@ export const ChatMoreMessageButton = (
       size="icon"
       class="rounded-full"
     >
-      <Spinner size="md" class="bg-black dark:bg-white" />
+      <Spinner />
     </Button>
   );
 };
