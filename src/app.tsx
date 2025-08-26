@@ -4,7 +4,6 @@ import {
 } from "@solidjs/router";
 import {
   createEffect,
-  createSignal,
   ErrorBoundary,
   onCleanup,
   onMount,
@@ -73,54 +72,7 @@ import { sleep } from "./libs/utils/sleep";
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
 import { AudioPlayerProvider } from "./components/audio-player";
-
-const createWakeLock = () => {
-  const [wakeLock, setWakeLock] =
-    createSignal<WakeLockSentinel | null>(null);
-
-  const requestWakeLock = async () => {
-    if (!("wakeLock" in navigator)) {
-      console.warn("Wake Lock API is not supported");
-      return;
-    }
-    const lock = wakeLock();
-    if (lock && lock.released === false) {
-      return;
-    }
-
-    const [err, newLock] = await catchErrorAsync(
-      navigator.wakeLock.request("screen"),
-    );
-    if (err) {
-      console.error(err);
-      return;
-    }
-    setWakeLock(newLock);
-    newLock.addEventListener("release", () => {
-      setWakeLock(null);
-    });
-  };
-  const handleVisibilityChange = async () => {
-    if (document.visibilityState === "visible") {
-      await requestWakeLock();
-    }
-  };
-  onMount(async () => {
-    await requestWakeLock();
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibilityChange,
-    );
-  });
-  onCleanup(() => {
-    document.removeEventListener(
-      "visibilitychange",
-      handleVisibilityChange,
-    );
-    wakeLock()?.release();
-  });
-  return wakeLock;
-};
+import { AppWakeLock } from "./components/wakelock";
 
 const InnerApp = (props: ParentProps) => {
   const { joinRoom } = useWebRTC();
@@ -290,7 +242,6 @@ const InnerApp = (props: ParentProps) => {
     }
   });
 
-  createWakeLock();
   createReloadPrompt();
 
   const {
@@ -327,13 +278,15 @@ const InnerApp = (props: ParentProps) => {
       <QRCodeDialogComponent />
       <AboutDialogComponent />
       <ForwardDialogComponent />
+      <AppWakeLock enabled={appOptions.wakeLock} />
 
       <div class="flex h-full min-h-full w-full flex-col md:flex-row">
         <div
-          class="sticky top-0 z-50 h-[var(--mobile-header-height)]
-            max-h-[100vh] w-[var(--desktop-header-width)] flex-shrink-0
-            overflow-y-auto border-b border-border bg-background/80
-            backdrop-blur scrollbar-none md:border-b-0 md:border-r"
+          class="border-border bg-background/80 scrollbar-none sticky top-0
+            z-50 h-[var(--mobile-header-height)] max-h-[100vh]
+            w-[var(--desktop-header-width)] flex-shrink-0
+            overflow-y-auto border-b backdrop-blur md:border-r
+            md:border-b-0"
         >
           <div
             class="sticky top-0 flex h-full max-h-[100vh] items-center gap-2
@@ -381,7 +334,7 @@ const InnerApp = (props: ParentProps) => {
                     </p>
                     <Show when={roomStatus.roomId}>
                       {(room) => (
-                        <p class="flex items-center gap-1 text-xs text-muted-foreground">
+                        <p class="text-muted-foreground flex items-center gap-1 text-xs">
                           <IconHome class="size-4" />{" "}
                           {room()}
                         </p>
@@ -389,7 +342,7 @@ const InnerApp = (props: ParentProps) => {
                     </Show>
                     <Show when={roomStatus.profile}>
                       {(profile) => (
-                        <p class="flex items-center gap-1 text-xs text-muted-foreground">
+                        <p class="text-muted-foreground flex items-center gap-1 text-xs">
                           <IconPermContactCalendar class="size-4" />
                           {new Date(
                             profile().createdAt,
@@ -453,8 +406,8 @@ const ErrorComponent = (props: {
 }) => {
   return (
     <div
-      class="flex size-full max-w-[100vw] flex-col justify-center gap-2
-        bg-background/80 px-2 py-4 backdrop-blur"
+      class="bg-background/80 flex size-full max-w-[100vw] flex-col
+        justify-center gap-2 px-2 py-4 backdrop-blur"
     >
       <h3 class="h3 mb-4">
         {t("common.error_boundary.title")}
@@ -467,8 +420,8 @@ const ErrorComponent = (props: {
         {/* Print stack trace */}
         <Textarea
           readOnly
-          class="flex-1 overflow-x-auto whitespace-pre-wrap text-nowrap
-            text-xs scrollbar-thin"
+          class="scrollbar-thin flex-1 overflow-x-auto text-xs text-nowrap
+            whitespace-pre-wrap"
           value={props.error.stack}
         />
       </div>

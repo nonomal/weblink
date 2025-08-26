@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/context-menu";
 import {
   IconAudioFileFilled,
+  IconChatBubble,
   IconDelete,
   IconDraftFilled,
   IconFolderMatch,
@@ -62,7 +63,7 @@ const MessageData = (props: { message?: StoreMessage }) => {
     case "file": {
       return (
         <div class="muted line-clamp-2 break-all">
-          <div class="space-x-1 [&>*]:align-middle [&_*]:inline [&_svg]:size-4">
+          <div class="space-x-1 [&_*]:inline [&_svg]:size-4 [&>*]:align-middle">
             <IconFile mimetype={props.message.mimeType} />
             <span>{props.message.fileName}</span>
           </div>
@@ -78,14 +79,15 @@ const MessageData = (props: { message?: StoreMessage }) => {
 export const UserItem: Component<UserItemProps> = (
   props,
 ) => {
-  const [local, other] = splitProps(props, [
+  const [local] = splitProps(props, [
     "client",
     "collapsed",
     "class",
   ]);
 
   const clientInfo = createMemo<ClientInfo | undefined>(
-    () => sessionService.clientViewData[local.client.clientId],
+    () =>
+      sessionService.clientViewData[local.client.clientId],
   );
 
   const {
@@ -105,6 +107,17 @@ export const UserItem: Component<UserItemProps> = (
             <ContextMenuSeparator />
             <ContextMenuItem
               as={A}
+              href={`/client/${local.client.clientId}/chat`}
+              class="gap-2"
+              onSelect={() => {
+                close();
+              }}
+            >
+              <IconChatBubble class="size-4" />
+              {t("client.client_list.context_menu.chat")}
+            </ContextMenuItem>
+            <ContextMenuItem
+              as={A}
               href={`/client/${local.client.clientId}/sync`}
               class="gap-2"
               onSelect={() => {
@@ -112,10 +125,11 @@ export const UserItem: Component<UserItemProps> = (
               }}
             >
               <IconFolderMatch class="size-4" />
-              {t("client.sync.title")}
+              {t("client.client_list.context_menu.sync")}
             </ContextMenuItem>
-
+            <ContextMenuSeparator />
             <ContextMenuItem
+              variant="destructive"
               class="gap-2"
               onSelect={async () => {
                 close();
@@ -139,7 +153,7 @@ export const UserItem: Component<UserItemProps> = (
         {(p) => (
           <li
             class={cn(
-              "flex w-full flex-col transition-colors hover:bg-muted/50",
+              "hover:bg-muted/50 flex w-full flex-col transition-colors",
             )}
             {...p}
           >
@@ -151,6 +165,7 @@ export const UserItem: Component<UserItemProps> = (
               <Avatar class="size-10 self-center">
                 <AvatarImage
                   src={local.client.avatar ?? undefined}
+                  alt={local.client.name}
                 />
                 <AvatarFallback>
                   {getInitials(local.client.name)}
@@ -159,7 +174,7 @@ export const UserItem: Component<UserItemProps> = (
               <Show when={!local.collapsed}>
                 <div class="w-full flex-1 space-y-1">
                   <p class="flex w-full flex-wrap items-center justify-between gap-2">
-                    <span class="line-clamp-1 text-ellipsis font-bold">
+                    <span class="line-clamp-1 font-bold text-ellipsis">
                       {props.client.name}
                     </span>
                     <ConnectionBadge
@@ -169,7 +184,7 @@ export const UserItem: Component<UserItemProps> = (
                   <MessageData message={props.message} />
                   <Show when={props.message?.createdAt}>
                     {(createdAt) => (
-                      <span class="muted float-end text-nowrap text-xs">
+                      <span class="muted float-end text-xs text-nowrap">
                         {createTimeAgo(createdAt())}
                       </span>
                     )}

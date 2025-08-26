@@ -61,7 +61,8 @@ export default function Home(props: RouteSectionProps) {
     const clientId = appOptions.redirectToClient;
     if (!clientId) return;
 
-    const clientInfo = sessionService.clientViewData[clientId];
+    const clientInfo =
+      sessionService.clientViewData[clientId];
     if (clientInfo) {
       navigate(`/client/${clientId}/chat`, {
         replace: true,
@@ -69,6 +70,66 @@ export default function Home(props: RouteSectionProps) {
     }
   });
 
+  return (
+    <Resizable
+      sizes={size()}
+      onSizesChange={(sizes) => setSize(sizes)}
+    >
+      <Show when={!isMobile() || path() === "/"}>
+        <ResizablePanel
+          class={cn(
+            `bg-background/80 backdrop-blur
+            data-[collapsed]:transition-all data-[collapsed]:ease-in-out`,
+          )}
+          collapsible
+          initialSize={0.2}
+          maxSize={0.3}
+          minSize={0.15}
+        >
+          {(props) => (
+            <ClientList
+              collapsed={props.collapsed}
+              expand={props.expand}
+              path={path() ?? ""}
+            />
+          )}
+        </ResizablePanel>
+      </Show>
+      <Show when={!isMobile()}>
+        <ResizableHandle />
+      </Show>
+
+      <Show when={!isMobile() || path() !== "/"}>
+        <ResizablePanel
+          class="relative"
+          minSize={0.7}
+          initialSize={0.8}
+        >
+          {(resizeProps) => {
+            createEffect(() => {
+              if (!isMobile() && (size()?.[1] ?? 0) < 0.7) {
+                resizeProps.resize(0.7);
+              }
+            });
+
+            return <>{props.children}</>;
+          }}
+        </ResizablePanel>
+      </Show>
+    </Resizable>
+  );
+}
+
+const ClientList = (props: {
+  collapsed: boolean;
+  expand: () => void;
+  path: string;
+}) => {
+  createEffect(() => {
+    if (props.collapsed && props.path === "/") {
+      props.expand();
+    }
+  });
   const getLastMessage = (clientId: ClientID) =>
     messageStores.messages.findLast(
       (message) =>
@@ -102,93 +163,42 @@ export default function Home(props: RouteSectionProps) {
         );
       });
   });
-
   return (
-    <Resizable
-      sizes={size()}
-      onSizesChange={(sizes) => setSize(sizes)}
+    <div
+      class="top-0 h-full w-full overflow-x-hidden md:sticky
+        md:max-h-[100vh] md:overflow-y-auto"
     >
-      <Show when={!isMobile() || path() === "/"}>
-        <ResizablePanel
-          class={cn(
-            `bg-background/80 backdrop-blur
-            data-[collapsed]:transition-all data-[collapsed]:ease-in-out`,
-          )}
-          collapsible
-          initialSize={0.2}
-          maxSize={0.3}
-          minSize={0.15}
-        >
-          {(props) => {
-            createEffect(() => {
-              if (props.collapsed && path() === "/") {
-                props.expand();
-              }
-            });
-            return (
+      <ul
+        class={cn(
+          "flex h-full w-full flex-col [&>li]:py-1",
+          props.collapsed ? "" : "divide-muted divide-y",
+        )}
+      >
+        <For
+          each={clntWithLastMsg()}
+          fallback={
+            <div class="relative h-full w-full overflow-hidden">
               <div
-                class="top-0 h-full w-full overflow-x-hidden md:sticky
-                  md:max-h-[100vh] md:overflow-y-auto"
+                class="absolute top-1/2 left-1/2 flex w-1/2 -translate-x-1/2
+                  -translate-y-1/2 flex-col items-center"
               >
-                <ul
-                  class={cn(
-                    "flex h-full w-full flex-col [&>li]:py-1",
-                    props.collapsed
-                      ? ""
-                      : "divide-y divide-muted",
-                  )}
-                >
-                  <For
-                    each={clntWithLastMsg()}
-                    fallback={
-                      <div class="relative h-full w-full overflow-hidden">
-                        <div
-                          class="absolute left-1/2 top-1/2 flex w-1/2 -translate-x-1/2
-                            -translate-y-1/2 flex-col items-center"
-                        >
-                          <IconPerson class="text-muted/10" />
-                          <p class="text-xs text-muted-foreground md:hidden">
-                            {t("client.index.mobile_tip")}
-                          </p>
-                        </div>
-                      </div>
-                    }
-                  >
-                    {({ client, message }) => (
-                      <UserItem
-                        message={message}
-                        client={client}
-                        collapsed={props.collapsed}
-                      />
-                    )}
-                  </For>
-                </ul>
+                <IconPerson class="text-muted/10" />
+                <p class="text-muted-foreground text-xs md:hidden">
+                  {t("client.index.mobile_tip")}
+                </p>
               </div>
-            );
-          }}
-        </ResizablePanel>
-      </Show>
-      <Show when={!isMobile()}>
-        <ResizableHandle />
-      </Show>
-
-      <Show when={!isMobile() || path() !== "/"}>
-        <ResizablePanel
-          class="relative"
-          minSize={0.7}
-          initialSize={0.8}
+            </div>
+          }
         >
-          {(resizeProps) => {
-            createEffect(() => {
-              if (!isMobile() && (size()?.[1] ?? 0) < 0.7) {
-                resizeProps.resize(0.7);
-              }
-            });
-
-            return <>{props.children}</>;
-          }}
-        </ResizablePanel>
-      </Show>
-    </Resizable>
+          {({ client, message }) => (
+            <UserItem
+              message={message}
+              client={client}
+              collapsed={props.collapsed}
+            />
+          )}
+        </For>
+      </ul>
+    </div>
   );
-}
+};

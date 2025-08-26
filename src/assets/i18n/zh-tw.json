@@ -19,6 +19,10 @@
       "background_image_opacity": {
         "title": "背景圖片透明度",
         "description": "變更背景圖片的透明度"
+      },
+      "wake_lock": {
+        "title": "保持螢幕常亮",
+        "description": "當啟用時，應用程式將保持螢幕常亮"
       }
     },
     "connection": {
@@ -164,6 +168,12 @@
     "home": "返回首頁"
   },
   "client": {
+    "client_list": {
+      "context_menu": {
+        "chat": "聊天",
+        "sync": "檔案同步"
+      }
+    },
     "menu": {
       "connect": "連接",
       "connection_status": "連接狀態",

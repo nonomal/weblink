@@ -26,7 +26,10 @@ import {
 } from "@/libs/core/file-transferer";
 import createTransferSpeed from "@/libs/hooks/transfer-speed";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
-import { ContextMenuItem } from "@/components/ui/context-menu";
+import {
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
 import { convertImageToPNG } from "@/libs/utils/conver-to-png";
 import {
   FileTransferMessage,
@@ -802,7 +805,9 @@ export const MessageContent: Component<MessageCardProps> = (
           close={props.close}
         />
         <Show when={props.onDelete !== undefined}>
+          <ContextMenuSeparator />
           <ContextMenuItem
+            variant="destructive"
             class="gap-2"
             onSelect={() => {
               props.onDelete?.();

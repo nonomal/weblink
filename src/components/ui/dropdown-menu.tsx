@@ -35,7 +35,12 @@ export const DropdownMenu = (
     props,
   );
 
-  return <DropdownMenuPrimitive {...merge} />;
+  return (
+    <DropdownMenuPrimitive
+      data-slot="dropdown-menu"
+      {...merge}
+    />
+  );
 };
 
 type dropdownMenuContentProps<
@@ -57,14 +62,15 @@ export const DropdownMenuContent = <
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
+        data-slot="dropdown-menu-content"
         class={cn(
-          `min-w-8rem z-50 overflow-hidden rounded-md border bg-popover
-          p-1 text-popover-foreground shadow-md transition-shadow
-          focus-visible:outline-none focus-visible:ring-[1.5px]
+          `min-w-8rem bg-popover text-popover-foreground
           focus-visible:ring-ring data-[expanded]:animate-in
           data-[closed]:animate-out data-[closed]:fade-out-0
           data-[expanded]:fade-in-0 data-[closed]:zoom-out-95
-          data-[expanded]:zoom-in-95`,
+          data-[expanded]:zoom-in-95 z-50 overflow-hidden rounded-md
+          border p-1 shadow-md transition-shadow
+          focus-visible:ring-[1.5px] focus-visible:outline-none`,
           local.class,
         )}
         {...rest}
@@ -78,6 +84,7 @@ type dropdownMenuItemProps<
 > = DropdownMenuItemProps<T> & {
   class?: string;
   inset?: boolean;
+  variant?: "default" | "destructive";
 };
 
 export const DropdownMenuItem = <
@@ -87,19 +94,28 @@ export const DropdownMenuItem = <
 ) => {
   const [local, rest] = splitProps(
     props as dropdownMenuItemProps,
-    ["class", "inset"],
+    ["class", "inset", "variant"],
   );
 
   return (
     <DropdownMenuPrimitive.Item
+      data-slot="dropdown-menu-item"
+      data-inset={local.inset}
+      data-variant={local.variant}
       class={cn(
-        `relative flex cursor-default select-none items-center
-        rounded-sm px-2 py-1.5 text-sm outline-none
-        transition-colors focus:bg-accent
-        focus:text-accent-foreground
+        `focus:bg-accent focus:text-accent-foreground
+        data-[variant=destructive]:text-destructive
+        data-[variant=destructive]:focus:bg-destructive/10
+        dark:data-[variant=destructive]:focus:bg-destructive/20
+        data-[variant=destructive]:focus:text-destructive
+        data-[variant=destructive]:*:[svg]:!text-destructive
+        [&_svg:not([class*='text-'])]:text-muted-foreground relative
+        flex cursor-default items-center gap-2 rounded-sm px-2
+        py-1.5 text-sm outline-hidden select-none
         data-[disabled]:pointer-events-none
-        data-[disabled]:opacity-50`,
-        local.inset && "pl-8",
+        data-[disabled]:opacity-50 data-[inset]:pl-8
+        [&_svg]:pointer-events-none [&_svg]:shrink-0
+        [&_svg:not([class*='size-'])]:size-4`,
         local.class,
       )}
       {...rest}
@@ -129,6 +145,7 @@ export const DropdownMenuGroupLabel = <
   return (
     <DropdownMenuPrimitive.GroupLabel
       as="div"
+      data-slot="dropdown-menu-group-label"
       class={cn(
         "px-2 py-1.5 text-sm font-semibold",
         local.class,
@@ -142,6 +159,7 @@ type dropdownMenuItemLabelProps<
   T extends ValidComponent = "div",
 > = DropdownMenuItemLabelProps<T> & {
   class?: string;
+  inset?: boolean;
 };
 
 export const DropdownMenuItemLabel = <
@@ -151,14 +169,16 @@ export const DropdownMenuItemLabel = <
 ) => {
   const [local, rest] = splitProps(
     props as dropdownMenuItemLabelProps,
-    ["class"],
+    ["class", "inset"],
   );
 
   return (
     <DropdownMenuPrimitive.ItemLabel
       as="div"
+      data-slot="dropdown-menu-item-label"
+      data-inset={local.inset}
       class={cn(
-        "px-2 py-1.5 text-sm font-semibold",
+        "px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
         local.class,
       )}
       {...rest}
@@ -184,7 +204,8 @@ export const DropdownMenuSeparator = <
 
   return (
     <DropdownMenuPrimitive.Separator
-      class={cn("-mx-1 my-1 h-px bg-muted", local.class)}
+      data-slot="dropdown-menu-separator"
+      class={cn("bg-border -mx-1 my-1 h-px", local.class)}
       {...rest}
     />
   );
@@ -211,6 +232,7 @@ type dropdownMenuSubTriggerProps<
 > = ParentProps<
   DropdownMenuSubTriggerProps<T> & {
     class?: string;
+    inset?: boolean;
   }
 >;
 
@@ -224,15 +246,19 @@ export const DropdownMenuSubTrigger = <
 ) => {
   const [local, rest] = splitProps(
     props as dropdownMenuSubTriggerProps,
-    ["class", "children"],
+    ["class", "children", "inset"],
   );
 
   return (
     <DropdownMenuPrimitive.SubTrigger
+      data-slot="dropdown-menu-sub-trigger"
+      data-inset={local.inset}
       class={cn(
-        `flex cursor-default select-none items-center rounded-sm px-2
-        py-1.5 text-sm outline-none focus:bg-accent
-        data-[expanded]:bg-accent`,
+        `focus:bg-accent focus:text-accent-foreground
+        data-[expanded]:bg-accent
+        data-[expanded]:text-accent-foreground flex cursor-default
+        items-center rounded-sm px-2 py-1.5 text-sm outline-hidden
+        select-none data-[inset]:pl-8`,
         local.class,
       )}
       {...rest}
@@ -281,12 +307,13 @@ export const DropdownMenuSubContent = <
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.SubContent
+        data-slot="dropdown-menu-sub-content"
         class={cn(
-          `min-w-8rem z-50 overflow-hidden rounded-md border bg-popover
-          p-1 text-popover-foreground shadow-md
+          `min-w-8rem bg-popover text-popover-foreground
           data-[expanded]:animate-in data-[closed]:animate-out
           data-[closed]:fade-out-0 data-[expanded]:fade-in-0
-          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95`,
+          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 z-50
+          overflow-hidden rounded-md border p-1 shadow-md`,
           local.class,
         )}
         {...rest}
@@ -319,10 +346,9 @@ export const DropdownMenuCheckboxItem = <
   return (
     <DropdownMenuPrimitive.CheckboxItem
       class={cn(
-        `relative flex cursor-default select-none items-center
-        rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none
-        transition-colors focus:bg-accent
-        focus:text-accent-foreground
+        `focus:bg-accent focus:text-accent-foreground relative flex
+        cursor-default items-center rounded-sm py-1.5 pr-2 pl-8
+        text-sm transition-colors outline-none select-none
         data-[disabled]:pointer-events-none
         data-[disabled]:opacity-50`,
         local.class,
@@ -375,10 +401,9 @@ export const DropdownMenuRadioItem = <
   return (
     <DropdownMenuPrimitive.RadioItem
       class={cn(
-        `relative flex cursor-default select-none items-center
-        rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none
-        transition-colors focus:bg-accent
-        focus:text-accent-foreground
+        `focus:bg-accent focus:text-accent-foreground relative flex
+        cursor-default items-center rounded-sm py-1.5 pr-2 pl-8
+        text-sm transition-colors outline-none select-none
         data-[disabled]:pointer-events-none
         data-[disabled]:opacity-50`,
         local.class,

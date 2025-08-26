@@ -359,6 +359,28 @@ export default function Settings() {
             </SliderTrack>
           </Slider>
 
+          <div class="flex flex-col gap-2">
+            <Switch
+              class="flex items-center justify-between"
+              checked={appOptions.wakeLock}
+              onChange={(isChecked) =>
+                setAppOptions("wakeLock", isChecked)
+              }
+            >
+              <SwitchLabel>
+                {t("setting.appearance.wake_lock.title")}
+              </SwitchLabel>
+              <SwitchControl>
+                <SwitchThumb />
+              </SwitchControl>
+            </Switch>
+            <p class="muted">
+              {t(
+                "setting.appearance.wake_lock.description",
+              )}
+            </p>
+          </div>
+
           <h3 id="connection" class="h3">
             {t("setting.connection.title")}
           </h3>

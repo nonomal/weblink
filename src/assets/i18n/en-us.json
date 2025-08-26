@@ -19,6 +19,10 @@
       "background_image_opacity": {
         "title": "Background Image Opacity",
         "description": "Change the opacity of the background image"
+      },
+      "wake_lock": {
+        "title": "Keep Screen On",
+        "description": "When enabled, the app will keep the screen on"
       }
     },
     "connection": {
@@ -164,6 +168,12 @@
     "home": "Go to Home"
   },
   "client": {
+    "client_list": {
+      "context_menu": {
+        "chat": "Chat",
+        "sync": "File Sync"
+      }
+    },
     "menu": {
       "connect": "Connect",
       "connection_status": "Connection Status",

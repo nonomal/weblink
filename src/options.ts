@@ -54,6 +54,7 @@ export type AppOption = {
   relayOnly: boolean;
 
   // Appearance
+  wakeLock: boolean;
   locale: Locale;
   backgroundImage?: FileID;
   backgroundImageOpacity: number;
@@ -150,6 +151,7 @@ export const getDefaultAppOptions = () => {
       ),
     },
     relayOnly: false,
+    wakeLock: true,
     compressionLevel: 6,
     locale: localFromLanguage(navigator.language),
     shareServersWithOthers: true,

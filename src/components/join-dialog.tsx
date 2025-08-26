@@ -28,7 +28,10 @@ import { IconCasino, IconLogin, IconLogout } from "./icons";
 import { toast } from "solid-sonner";
 import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
-import { appOptions } from "@/options";
+import {
+  appOptions,
+  getDefaultAppOptions,
+} from "@/options";
 import { getInitials } from "@/libs/utils/name";
 import { generateStrongPassword } from "@/libs/core/utils/encrypt/strong-password";
 import {
@@ -213,15 +216,29 @@ export const joinUrl = createMemo(() => {
     url.searchParams.append("pwd", clientProfile.password);
 
   if (appOptions.shareServersWithOthers) {
-    if (appOptions.servers.stuns.length > 0) {
+    // compare if user's appOptions is different from defaultAppOptions
+    const defaultAppOptions = getDefaultAppOptions();
+    if (
+      appOptions.servers.stuns.length !==
+        defaultAppOptions.servers.stuns.length &&
+      appOptions.servers.stuns.some(
+        (server, index) =>
+          server !== defaultAppOptions.servers.stuns[index],
+      )
+    ) {
       url.searchParams.append(
         "stun",
         JSON.stringify(appOptions.servers.stuns),
       );
     }
     if (
-      appOptions.servers.turns &&
-      appOptions.servers.turns.length > 0
+      appOptions.servers.turns.length !==
+        defaultAppOptions.servers.turns.length &&
+      appOptions.servers.turns.some(
+        (server, index) =>
+          server.url !==
+          defaultAppOptions.servers.turns[index].url,
+      )
     ) {
       url.searchParams.append(
         "turn",

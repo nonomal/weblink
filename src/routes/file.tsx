@@ -223,8 +223,9 @@ export default function File() {
       ),
       cell: (info) => (
         <div
-          class="space-x-1 overflow-hidden text-ellipsis [&>*]:align-middle
-            [&_*]:inline [&_svg]:size-4"
+          class="max-w-xs space-x-1 overflow-hidden text-ellipsis
+            [&_*]:inline [&_svg]:size-4 [&>*]:align-middle"
+          title={info.getValue()}
         >
           <IconFile mimetype={info.row.original.mimetype} />
           <span>{info.getValue()}</span>
@@ -259,8 +260,8 @@ export default function File() {
         });
         return (
           <p
-            class="flex max-w-xs items-center gap-1 overflow-hidden
-              text-ellipsis text-xs"
+            class="flex max-w-xs items-center gap-1 overflow-hidden text-xs
+              text-ellipsis"
           >
             <Badge variant="outline">
               {getStatus(row.original).label}
@@ -355,9 +356,6 @@ export default function File() {
             </DropdownMenuTrigger>
             <DropdownMenuContent class="min-w-48">
               <DropdownMenuGroup>
-                <DropdownMenuGroupLabel>
-                  {t("common.action.actions")}
-                </DropdownMenuGroupLabel>
                 <Show when={row.original.file}>
                   {(file) => {
                     const shareableData = createMemo(() => {
@@ -459,12 +457,13 @@ export default function File() {
                             {t("common.action.merge")}
                           </DropdownMenuItem>
                         </Show>
+                        <DropdownMenuSeparator />
                       </>
                     );
                   }}
                 </Show>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  variant="destructive"
                   class="gap-2"
                   onSelect={async () => {
                     if (
@@ -594,8 +593,8 @@ export default function File() {
       <ForwardDialogComponent />
 
       <div
-        class="container z-[10] flex h-full min-h-[calc(100%-3rem)] w-full
-          flex-col gap-4 bg-background/80 px-0 pt-4"
+        class="bg-background/80 z-[10] container flex h-full
+          min-h-[calc(100%-3rem)] w-full flex-col gap-4 px-0 pt-4"
       >
         <PortableContextMenu
           menu={(close) => (
@@ -674,9 +673,9 @@ export default function File() {
         >
           {(p) => (
             <label
-              class="fixed bottom-4 right-4 z-50 flex size-12 items-center
-                justify-center rounded-full bg-muted/80 shadow-md
-                backdrop-blur hover:cursor-pointer hover:bg-muted/90"
+              class="bg-muted/80 hover:bg-muted/90 fixed right-4 bottom-4 z-50
+                flex size-12 items-center justify-center rounded-full
+                shadow-md backdrop-blur hover:cursor-pointer"
               style={{
                 right:
                   "calc(1rem + var(--scrollbar-width, 0px))",
@@ -807,11 +806,11 @@ export default function File() {
             tabIndex="0"
             class={cn(
               inputClass,
-              `flex h-8 w-full max-w-md items-center gap-2 bg-background/80
-              px-2 focus-within:ring-1 focus-within:ring-ring`,
+              `bg-background/80 focus-within:ring-ring flex h-8 w-full
+              max-w-md items-center gap-2 px-2 focus-within:ring-1`,
             )}
           >
-            <IconSearch700 class="size-5 text-muted-foreground" />
+            <IconSearch700 class="text-muted-foreground size-5" />
 
             <input
               type="search"
@@ -867,10 +866,10 @@ export default function File() {
               }
             }
             return (
-              <div class="pointer-events-none absolute inset-0 bg-muted/50">
+              <div class="bg-muted/50 pointer-events-none absolute inset-0">
                 <span
-                  class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                    text-muted-foreground/20"
+                  class="text-muted-foreground/20 absolute top-1/2 left-1/2
+                    -translate-x-1/2 -translate-y-1/2"
                 >
                   <Show
                     when={
@@ -930,16 +929,15 @@ export default function File() {
         >
           <div
             data-sync-scroll="file-table"
-            class="relative flex h-full w-full max-w-full flex-col
-              overflow-x-auto scrollbar-none sm:absolute sm:inset-0
-              sm:scrollbar-thin"
+            class="scrollbar-none sm:scrollbar-thin relative flex h-full w-full
+              max-w-full flex-col overflow-x-auto sm:absolute sm:inset-0"
           >
             <Table
               class="mb-20 text-nowrap"
               ref={setTableBody}
             >
               <TableHeader
-                class="sticky top-0 z-10 hidden bg-background/50 backdrop-blur
+                class="bg-background/50 sticky top-0 z-10 hidden backdrop-blur
                   sm:table-header-group"
               >
                 <For each={table.getHeaderGroups()}>
@@ -950,7 +948,7 @@ export default function File() {
                           <TableHead
                             class={cn(
                               header.column.getIsPinned() &&
-                                "bg-background/50 transition-colors [tr:hover_&]:bg-muted",
+                                "bg-background/50 [tr:hover_&]:bg-muted transition-colors",
                             )}
                             style={{
                               ...getCommonPinningStyles(
@@ -981,7 +979,7 @@ export default function File() {
                     <TableRow>
                       <TableCell
                         colSpan={columns.length}
-                        class="h-24 text-center text-lg font-bold text-muted-foreground/50"
+                        class="text-muted-foreground/50 h-24 text-center text-lg font-bold"
                       >
                         {t("common.file_table.no_data")}
                       </TableCell>
@@ -1017,8 +1015,8 @@ export default function File() {
                             }}
                             class={cn(
                               cell.column.getIsPinned() &&
-                                `bg-background/50 backdrop-blur transition-colors
-                                [tr:hover_&]:bg-muted`,
+                                `bg-background/50 [tr:hover_&]:bg-muted backdrop-blur
+                                transition-colors`,
                             )}
                             style={{
                               ...getCommonPinningStyles(
@@ -1042,10 +1040,10 @@ export default function File() {
           </div>
           <div
             data-sync-scroll="file-table"
-            class="sticky top-[calc(var(--mobile-header-height)+3rem)] z-10
-              block h-auto overflow-x-auto overflow-y-hidden
-              bg-background/50 backdrop-blur scrollbar-thin sm:top-12
-              sm:hidden"
+            class="bg-background/50 scrollbar-thin sticky
+              top-[calc(var(--mobile-header-height)+3rem)] z-10 block
+              h-auto overflow-x-auto overflow-y-hidden backdrop-blur
+              sm:top-12 sm:hidden"
           >
             <Table
               style={{
@@ -1061,7 +1059,7 @@ export default function File() {
                           <TableHead
                             class={cn(
                               header.column.getIsPinned() &&
-                                "bg-background/50 transition-colors [tr:hover_&]:bg-muted",
+                                "bg-background/50 [tr:hover_&]:bg-muted transition-colors",
                             )}
                             style={{
                               ...getCommonPinningStyles(

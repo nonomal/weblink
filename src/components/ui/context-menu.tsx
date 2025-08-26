@@ -50,10 +50,11 @@ export const ContextMenuSubTrigger = <
   return (
     <ContextMenuPrimitive.SubTrigger
       class={cn(
-        `flex cursor-default select-none items-center rounded-sm px-2
-        py-1.5 text-sm outline-none focus:bg-accent
-        focus:text-accent-foreground data-[expanded]:bg-accent
-        data-[expanded]:text-accent-foreground`,
+        `focus:bg-accent focus:text-accent-foreground
+        data-[expanded]:bg-accent
+        data-[expanded]:text-accent-foreground flex cursor-default
+        items-center rounded-sm px-2 py-1.5 text-sm outline-none
+        select-none`,
         local.inset && "pl-8",
         local.class,
       )}
@@ -99,11 +100,11 @@ export const ContextMenuSubContent = <
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.SubContent
         class={cn(
-          `z-50 min-w-[8rem] overflow-hidden rounded-md border
-          bg-popover p-1 text-popover-foreground shadow-lg
+          `bg-popover text-popover-foreground
           data-[expanded]:animate-in data-[closed]:animate-out
           data-[closed]:fade-out-0 data-[expanded]:fade-in-0
-          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95`,
+          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 z-50
+          min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg`,
           local.class,
         )}
         {...rest}
@@ -132,13 +133,13 @@ export const ContextMenuContent = <
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
         class={cn(
-          `z-50 min-w-[8rem] overflow-hidden rounded-md border
-          bg-popover p-1 text-popover-foreground shadow-md
-          transition-shadow focus-visible:outline-none
-          focus-visible:ring-[1.5px] focus-visible:ring-ring
+          `bg-popover text-popover-foreground focus-visible:ring-ring
           data-[expanded]:animate-in data-[closed]:animate-out
           data-[closed]:fade-out-0 data-[expanded]:fade-in-0
-          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95`,
+          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 z-50
+          min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-md
+          transition-shadow focus-visible:ring-[1.5px]
+          focus-visible:outline-none`,
           local.class,
         )}
         {...rest}
@@ -152,6 +153,7 @@ type contextMenuItemProps<
 > = ContextMenuItemProps<T> & {
   class?: string;
   inset?: boolean;
+  variant?: "default" | "destructive";
 };
 
 export const ContextMenuItem = <
@@ -161,18 +163,29 @@ export const ContextMenuItem = <
 ) => {
   const [local, rest] = splitProps(
     props as contextMenuItemProps,
-    ["class", "inset"],
+    ["class", "inset", "variant"],
   );
 
   return (
     <ContextMenuPrimitive.Item
+      data-slot="context-menu-item"
+      data-inset={local.inset}
+      data-variant={local.variant}
       class={cn(
-        `relative flex cursor-default select-none items-center
-        rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent
-        focus:text-accent-foreground
+        `focus:bg-accent focus:text-accent-foreground
+        data-[variant=destructive]:text-destructive
+        data-[variant=destructive]:focus:bg-destructive/10
+        dark:data-[variant=destructive]:focus:bg-destructive/20
+        data-[variant=destructive]:focus:text-destructive
+        data-[variant=destructive]:*:[svg]:!text-destructive
+        [&_svg:not([class*='text-'])]:text-muted-foreground relative
+        flex cursor-default items-center gap-2 rounded-sm px-2
+        py-1.5 text-sm outline-hidden select-none
         data-[disabled]:pointer-events-none
-        data-[disabled]:opacity-50`,
-        local.inset && "pl-8",
+        data-[disabled]:opacity-50 data-[inset]:pl-8
+        [&_svg]:pointer-events-none [&_svg]:shrink-0
+        [&_svg:not([class*='size-'])]:size-4`,
+
         local.class,
       )}
       {...rest}
@@ -204,9 +217,9 @@ export const ContextMenuCheckboxItem = <
   return (
     <ContextMenuPrimitive.CheckboxItem
       class={cn(
-        `relative flex cursor-default select-none items-center
-        rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none
-        focus:bg-accent focus:text-accent-foreground
+        `focus:bg-accent focus:text-accent-foreground relative flex
+        cursor-default items-center rounded-sm py-1.5 pr-2 pl-8
+        text-sm outline-none select-none
         data-[disabled]:pointer-events-none
         data-[disabled]:opacity-50`,
         local.class,
@@ -259,9 +272,9 @@ export const ContextMenuRadioItem = <
   return (
     <ContextMenuPrimitive.RadioItem
       class={cn(
-        `relative flex cursor-default select-none items-center
-        rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none
-        focus:bg-accent focus:text-accent-foreground
+        `focus:bg-accent focus:text-accent-foreground relative flex
+        cursor-default items-center rounded-sm py-1.5 pr-2 pl-8
+        text-sm outline-none select-none
         data-[disabled]:pointer-events-none
         data-[disabled]:opacity-50`,
         local.class,
@@ -314,7 +327,7 @@ export const ContextMenuItemLabel = <
   return (
     <ContextMenuPrimitive.ItemLabel
       class={cn(
-        "px-2 py-1.5 text-sm font-semibold text-foreground",
+        "text-foreground px-2 py-1.5 text-sm font-semibold",
         local.inset && "pl-8",
         local.class,
       )}
@@ -344,7 +357,7 @@ export const ContextMenuGroupLabel = <
     <ContextMenuPrimitive.GroupLabel
       as="div"
       class={cn(
-        "px-2 py-1.5 text-sm font-semibold text-foreground",
+        "text-foreground px-2 py-1.5 text-sm font-semibold",
         local.inset && "pl-8",
         local.class,
       )}
@@ -373,7 +386,7 @@ export const ContextMenuSeparator = <
 
   return (
     <ContextMenuPrimitive.Separator
-      class={cn("-mx-1 my-1 h-px bg-border", local.class)}
+      class={cn("bg-border -mx-1 my-1 h-px", local.class)}
       {...rest}
     />
   );
@@ -387,7 +400,7 @@ export const ContextMenuShortcut = (
   return (
     <span
       class={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground",
+        "text-muted-foreground ml-auto text-xs tracking-widest",
         local.class,
       )}
       {...rest}
