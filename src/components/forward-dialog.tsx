@@ -1,10 +1,8 @@
 import {
-  createEffect,
   createMemo,
   createSignal,
   For,
   Match,
-  Show,
   Switch,
 } from "solid-js";
 import { Button } from "./ui/button";
@@ -28,10 +26,7 @@ import {
   Checkbox,
   CheckboxControl,
 } from "@/components/ui/checkbox";
-import {
-  IconForward,
-  IconDraft,
-} from "./icons";
+import { IconForward, IconDraft } from "./icons";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { toast } from "solid-sonner";
 import { FileMetaData } from "@/libs/cache";

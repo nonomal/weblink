@@ -32,7 +32,7 @@ import {
 } from "@/components/icons";
 import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
-import { ConnectionBadge } from "@/components/connection-badge";
+import { ConnectionBadge } from "@/components/common/connection-badge";
 import { toast } from "solid-sonner";
 import { appOptions, setAppOptions } from "@/options";
 import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";

@@ -1,4 +1,4 @@
-import { ConnectionBadge } from "@/components/connection-badge";
+import { ConnectionBadge } from "@/components/common/connection-badge";
 import { createDialog } from "@/components/dialogs/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -112,7 +112,7 @@ const clientInfoDialog = () => {
         name: client()?.name,
       }),
     content: () => (
-      <div class="grid grid-cols-3 gap-2 overflow-y-auto text-nowrap p-1">
+      <div class="grid grid-cols-3 gap-2 overflow-y-auto p-1 text-nowrap">
         <div class="col-span-3 flex items-center justify-between gap-2">
           <Label>
             {t("common.client_info_dialog.client_id")}
@@ -169,8 +169,8 @@ const clientInfoDialog = () => {
                     null,
                     2,
                   )}
-                  class="h-64 w-full overflow-auto text-nowrap font-mono text-xs
-                    scrollbar-thin"
+                  class="scrollbar-thin h-64 w-full overflow-auto font-mono text-xs
+                    text-nowrap"
                 />
               </div>
             </>

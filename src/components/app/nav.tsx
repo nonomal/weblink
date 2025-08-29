@@ -11,13 +11,13 @@ import {
   IconForum,
   IconMonitor,
   IconSettings,
-} from "./icons";
+} from "../icons";
 import { t } from "@/i18n";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "./ui/tooltip";
+} from "../ui/tooltip";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 
 export const linkClasses = cn(

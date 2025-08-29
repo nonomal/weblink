@@ -1,12 +1,5 @@
 import { cn } from "@/libs/cn";
-import {
-  Component,
-  createEffect,
-  createSignal,
-  JSX,
-  Setter,
-} from "solid-js";
-import { isServer } from "solid-js/web";
+import { Component, createSignal, JSX } from "solid-js";
 
 export interface ModalOptions<T extends any> {
   title?: () => JSX.Element;

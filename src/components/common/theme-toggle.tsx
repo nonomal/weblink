@@ -11,7 +11,7 @@ import {
   IconComputer,
   IconDarkMode,
   IconLightMode,
-} from "./icons";
+} from "../icons";
 
 export function ThemeToggle() {
   const { setColorMode } = useColorMode();

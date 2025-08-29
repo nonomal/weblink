@@ -5,9 +5,9 @@ import {
   MIN_VERSIONS,
 } from "@/libs/utils/browser-compatibility";
 import { JSX } from "solid-js";
-import { createDialog } from "./dialogs/dialog";
-import { ThemeToggle } from "./theme-toggle";
-import { Button } from "./ui/button";
+import { createDialog } from "../dialogs/dialog";
+import { ThemeToggle } from "@/components/common/theme-toggle";
+import { Button } from "../ui/button";
 
 export const CompatibilityView = (props: {
   children: JSX.Element;
@@ -63,7 +63,7 @@ export const CompatibilityView = (props: {
   return (
     <>
       <VersionSupportDetailsDialog />
-      <div class="flex h-screen flex-col bg-background/80 p-2 backdrop-blur">
+      <div class="bg-background/80 flex h-screen flex-col p-2 backdrop-blur">
         <div class="flex items-center justify-between">
           <h2 class="p-2 font-mono text-xl font-bold">
             Weblink
@@ -83,7 +83,7 @@ export const CompatibilityView = (props: {
               <li>{reason()}</li>
             ))}
           </ul>
-          <p class="text-sm text-muted-foreground">
+          <p class="text-muted-foreground text-sm">
             {t("browser_unsupported.description")}
           </p>
 
@@ -100,7 +100,7 @@ export const CompatibilityView = (props: {
           </Button>
         </div>
         <div class="flex flex-col gap-2">
-          <p class="self-end text-xs text-muted-foreground">
+          <p class="text-muted-foreground self-end text-xs">
             {navigator.userAgent}
           </p>
         </div>

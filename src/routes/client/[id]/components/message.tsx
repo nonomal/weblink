@@ -73,7 +73,7 @@ import {
 } from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
 import { toast } from "solid-sonner";
-import { Spinner } from "@/components/spinner";
+import { Spinner } from "@/components/common/spinner";
 import { createPreviewDialog } from "@/components/preview-dialog";
 import { downloadFile } from "@/libs/utils/download-file";
 import { FileID } from "@/libs/core/type";

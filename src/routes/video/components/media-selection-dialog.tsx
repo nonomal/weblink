@@ -4,21 +4,21 @@ import {
   createSignal,
   Show,
 } from "solid-js";
-import { createDialog } from "./dialogs/dialog";
+import { createDialog } from "../../../components/dialogs/dialog";
 import {
   IconMonitor,
   IconSettings,
   IconVideoCam,
-} from "./icons";
+} from "../../../components/icons";
 import {
   Tabs,
   TabsContent,
   TabsIndicator,
   TabsList,
   TabsTrigger,
-} from "./ui/tabs";
+} from "../../../components/ui/tabs";
 import { createStore } from "solid-js/store";
-import { Button } from "./ui/button";
+import { Button } from "../../../components/ui/button";
 import {
   createSpeakers,
   createMicrophones,
@@ -26,21 +26,21 @@ import {
 } from "@/libs/utils/devices";
 import { catchErrorAsync } from "@/libs/catch";
 import { toast } from "solid-sonner";
-import { Badge } from "./ui/badge";
+import { Badge } from "../../../components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../../../components/ui/select";
 import { createPermission } from "@solid-primitives/permission";
 import {
   Switch,
   SwitchControl,
   SwitchLabel,
   SwitchThumb,
-} from "./ui/switch";
+} from "../../../components/ui/switch";
 import { t } from "@/i18n";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { localStream } from "@/libs/stream";
@@ -389,7 +389,7 @@ export const createMediaSelectionDialog = () => {
             when={stream()}
             fallback={
               <VideoDisplay
-                class="aspect-video w-full bg-muted rounded-lg"
+                class="bg-muted aspect-video w-full rounded-lg"
                 stream={localStream()}
                 name={t(
                   "common.media_selection_dialog.current",
@@ -399,7 +399,7 @@ export const createMediaSelectionDialog = () => {
             }
           >
             <VideoDisplay
-              class="aspect-video w-full bg-muted rounded-lg"
+              class="bg-muted aspect-video w-full rounded-lg"
               stream={stream()}
               muted={true}
               name={t(
@@ -432,7 +432,7 @@ export const createMediaSelectionDialog = () => {
             </div>
             <Show when={canGetDisplayMedia}>
               <label class="flex items-center justify-between gap-2 p-2">
-                <p class="text-sm text-muted-foreground">
+                <p class="text-muted-foreground text-sm">
                   {t(
                     "common.media_selection_dialog.video_constraints",
                   )}
@@ -450,7 +450,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseScreenSpeaker() &&
-                  "border border-border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -504,7 +504,7 @@ export const createMediaSelectionDialog = () => {
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
+                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -520,7 +520,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseScreenMicrophone() &&
-                  "border border-border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -580,7 +580,7 @@ export const createMediaSelectionDialog = () => {
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
+                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -599,7 +599,7 @@ export const createMediaSelectionDialog = () => {
                   <Show
                     when={canGetDisplayMedia}
                     fallback={
-                      <p class="text-sm text-muted-foreground">
+                      <p class="text-muted-foreground text-sm">
                         {t(
                           "common.media_selection_dialog.not_support_display_media",
                         )}
@@ -692,7 +692,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseUserCamera() &&
-                  "border border-border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -751,7 +751,7 @@ export const createMediaSelectionDialog = () => {
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
+                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -767,7 +767,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseUserMicrophone() &&
-                  "border border-border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -828,7 +828,7 @@ export const createMediaSelectionDialog = () => {
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
+                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -855,7 +855,7 @@ export const createMediaSelectionDialog = () => {
                     <Show
                       when={canGetUserMedia}
                       fallback={
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-muted-foreground text-sm">
                           {t(
                             "common.media_selection_dialog.not_support_user_media",
                           )}

@@ -8,7 +8,7 @@ import {
   createLocalStorageManager,
 } from "@kobalte/core";
 import { ColorModeScript } from "@kobalte/core";
-import { CompatibilityView } from "@/components/compatibility-view";
+import { CompatibilityView } from "@/components/app/compatibility-view";
 import routes from "@/routes";
 
 const root = document.getElementById("root");

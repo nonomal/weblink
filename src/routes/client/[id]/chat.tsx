@@ -19,7 +19,7 @@ import {
 } from "@/libs/hooks/keep-bottom";
 import { cn } from "@/libs/cn";
 import DropArea from "@/components/drop-area";
-import { FloatingButton } from "@/components/floating-button";
+import { FloatingButton } from "./components/floating-button";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 // @ts-ignore
@@ -242,10 +242,10 @@ export default function ClientPage(
               delay={500}
               duration={150}
               isVisible={!enable()}
-              class="fixed z-50 size-12 rounded-full shadow-md backdrop-blur
-                data-[expanded]:animate-in data-[closed]:animate-out
+              class="data-[expanded]:animate-in data-[closed]:animate-out
                 data-[closed]:fade-out-0 data-[expanded]:fade-in-0
-                data-[closed]:zoom-out-75 data-[expanded]:zoom-in-75"
+                data-[closed]:zoom-out-75 data-[expanded]:zoom-in-75 fixed
+                z-50 size-12 rounded-full shadow-md backdrop-blur"
               style={{
                 bottom: `${16 + (size.height ?? 0)}px`,
                 right:
@@ -257,9 +257,9 @@ export default function ClientPage(
             <ChatHeader
               info={clientInfo()}
               client={client()}
-              class="sticky top-[var(--mobile-header-height)] z-10 flex
-                items-center justify-between gap-1 border-b border-border
-                bg-background/80 backdrop-blur md:top-0"
+              class="border-border bg-background/80 sticky
+                top-[var(--mobile-header-height)] z-10 flex items-center
+                justify-between gap-1 border-b backdrop-blur md:top-0"
             />
             <DropArea
               class="relative flex-1"
@@ -278,9 +278,9 @@ export default function ClientPage(
                   }
                 }
                 return (
-                  <div class="pointer-events-none absolute inset-0 bg-muted/50 text-center">
+                  <div class="bg-muted/50 pointer-events-none absolute inset-0 text-center">
                     <span
-                      class="fixed top-1/2 -translate-x-1/2 text-muted-foreground/20"
+                      class="text-muted-foreground/20 fixed top-1/2 -translate-x-1/2"
                       style={{
                         "--tw-translate-y": `-${(size.height ?? 0) / 2}px`,
                       }}

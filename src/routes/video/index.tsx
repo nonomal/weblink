@@ -38,14 +38,14 @@ import { cn } from "@/libs/cn";
 import { ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { Dynamic } from "solid-js/web";
-import { createMediaSelectionDialog } from "@/components/media-selection-dialog";
+import { createMediaSelectionDialog } from "./components/media-selection-dialog";
 import { clientProfile } from "@/libs/core/store";
-import { createApplyConstraintsDialog } from "@/components/track-constaints";
-import { useAudioPlayer } from "@/components/audio-player";
+import { createApplyConstraintsDialog } from "./components/track-constaints";
+import { useAudioPlayer } from "./components/audio-player";
 import {
   useVideoDisplay,
   VideoDisplay,
-} from "@/components/video-display";
+} from "./components/video-display";
 import {
   Tooltip,
   TooltipContent,

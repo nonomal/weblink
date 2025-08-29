@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.3] - 2025-08-29
+
+### New Features
+
+- Add camera capture button in chat bar 添加聊天栏的摄像头捕获按钮
+
+### Fixes
+
+- Fix some UI issues 修复部分 UI 问题
+
 ## [0.11.2] - 2025-03-17
 
 ### Improvements

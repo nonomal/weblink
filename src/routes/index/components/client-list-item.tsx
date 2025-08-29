@@ -41,7 +41,7 @@ import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete
 import { t } from "@/i18n";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { getInitials } from "@/libs/utils/name";
-import { ConnectionBadge } from "../../../components/connection-badge";
+import { ConnectionBadge } from "../../../components/common/connection-badge";
 import { IconFile } from "@/components/icon-file";
 
 export interface UserItemProps

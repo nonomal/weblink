@@ -16,9 +16,9 @@ import {
   useContext,
   createSignal,
 } from "solid-js";
-import { ClientAvatar } from "./client-avatar";
+import { ClientAvatar } from "../../../components/common/client-avatar";
 import { createMediaTracks } from "@/libs/hooks/tracks";
-import { Spinner } from "./spinner";
+import { Spinner } from "../../../components/common/spinner";
 import { Button } from "@/components/ui/button";
 import { t } from "@/i18n";
 

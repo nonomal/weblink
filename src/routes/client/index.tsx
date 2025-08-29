@@ -4,7 +4,7 @@ import { sessionService } from "@/libs/services/session-service";
 import { createRoomDialog } from "@/components/join-dialog";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/spinner";
+import { Spinner } from "@/components/common/spinner";
 import { clientProfile } from "@/libs/core/store";
 import {
   IconEditSquare,

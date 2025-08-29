@@ -14,7 +14,9 @@ import {
 } from "./base";
 import { cn } from "@/libs/cn";
 
-const BaseDrawer: Component<BaseModalProps<any>> = (props) => {
+const BaseDrawer: Component<BaseModalProps<any>> = (
+  props,
+) => {
   return (
     <Drawer
       noOutsidePointerEvents={false}

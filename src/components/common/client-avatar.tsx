@@ -3,7 +3,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "./ui/avatar";
+} from "../ui/avatar";
 import { PolymorphicProps } from "@kobalte/core";
 import { Image } from "@kobalte/core";
 import { splitProps, ValidComponent } from "solid-js";

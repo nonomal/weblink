@@ -12,7 +12,7 @@ import {
 } from "solid-js";
 import { Toaster } from "@/components/ui/sonner";
 import ChatProvider from "./components/chat/chat-provider";
-import Nav from "@/components/nav";
+import Nav from "@/components/app/nav";
 import {
   clientProfile,
   getRandomAvatar,
@@ -26,7 +26,7 @@ import {
 } from "./components/join-dialog";
 import { toast } from "solid-sonner";
 import { sessionService } from "./libs/services/session-service";
-import createAboutDialog from "./components/about-dialog";
+import createAboutDialog from "./components/app/about-dialog";
 import {
   appInitialized,
   appOptions,
@@ -71,8 +71,8 @@ import { messageStores } from "./libs/core/message";
 import { sleep } from "./libs/utils/sleep";
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
-import { AudioPlayerProvider } from "./components/audio-player";
-import { AppWakeLock } from "./components/wakelock";
+import { AudioPlayerProvider } from "./routes/video/components/audio-player";
+import { AppWakeLock } from "./components/app/wakelock";
 
 const InnerApp = (props: ParentProps) => {
   const { joinRoom } = useWebRTC();

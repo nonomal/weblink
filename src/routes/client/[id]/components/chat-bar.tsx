@@ -16,6 +16,7 @@ import { cn } from "@/libs/cn";
 
 import {
   IconAttachFile,
+  IconCamera,
   IconFolder,
   IconSend,
 } from "@/components/icons";
@@ -76,8 +77,8 @@ export const ChatBar: Component<
   return (
     <div
       class={cn(
-        `sticky bottom-0 z-10 flex flex-col gap-1 border-t
-        border-border bg-background/80 backdrop-blur`,
+        `border-border bg-background/80 sticky bottom-0 z-10 flex
+        flex-col gap-1 border-t backdrop-blur`,
         local.class,
       )}
       {...other}
@@ -148,20 +149,32 @@ export const ChatBar: Component<
               }}
             />
           </Button>
+          <Button as="label" variant="ghost" size="icon">
+            <IconCamera class="size-6" />
+            <Input
+              class="hidden"
+              type="file"
+              capture="environment"
+              onChange={(ev) => {
+                ev.currentTarget.files &&
+                  handleSendFiles(ev.currentTarget.files);
+              }}
+            />
+          </Button>
         </div>
         <label
           class={cn(
-            `relative rounded-md border border-input bg-transparent pl-3
-            text-sm shadow-sm placeholder:text-muted-foreground
-            focus-within:outline-none focus-within:ring-1
-            focus-within:ring-ring disabled:cursor-not-allowed
+            `border-input placeholder:text-muted-foreground
+            focus-within:ring-ring relative rounded-md border
+            bg-transparent pl-3 text-sm shadow-sm focus-within:ring-1
+            focus-within:outline-none disabled:cursor-not-allowed
             disabled:opacity-50`,
             "flex items-center",
           )}
         >
           <textarea
-            class="my-1 max-h-36 flex-1 resize-none overflow-y-auto
-              bg-transparent outline-none scrollbar-none"
+            class="scrollbar-none my-1 max-h-36 flex-1 resize-none
+              overflow-y-auto bg-transparent outline-none"
             ref={(ref) => {
               createEffect(() => {
                 textareaAutoResize(ref, text);
@@ -203,8 +216,6 @@ export const ChatBar: Component<
               const clipboardData = ev.clipboardData;
 
               if (!clipboardData?.items) return;
-
-              console.log(clipboardData.items);
 
               const abortController = new AbortController();
               const toastId = toast.loading(
@@ -268,7 +279,7 @@ export const ChatBar: Component<
             appOptions.enableClipboard
           }
         >
-          <p class="text-xs text-muted-foreground">
+          <p class="text-muted-foreground text-xs">
             {t("client.message_editor.paste_tip")}
           </p>
         </Show>

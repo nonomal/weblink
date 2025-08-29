@@ -13,9 +13,9 @@ import {
   SwitchLabel,
   SwitchControl,
   SwitchThumb,
-} from "./ui/switch";
-import { Label } from "./ui/label";
-import { createDialog } from "./dialogs/dialog";
+} from "../../../components/ui/switch";
+import { Label } from "../../../components/ui/label";
+import { createDialog } from "../../../components/dialogs/dialog";
 import { makePersisted } from "@solid-primitives/storage";
 import {
   Slider,
@@ -24,7 +24,7 @@ import {
   SliderThumb,
   SliderTrack,
   SliderValueLabel,
-} from "./ui/slider";
+} from "../../../components/ui/slider";
 import { createDebounceAsync } from "@/libs/hooks/debounce";
 
 const getSupportedConstraints = () => {
@@ -139,7 +139,7 @@ export const createApplyConstraintsDialog = () => {
       <div class="flex flex-col gap-2">
         <Show when={microphoneAudioTrack()}>
           {(track) => (
-            <div class="flex flex-col gap-2 rounded-md border border-border p-2">
+            <div class="border-border flex flex-col gap-2 rounded-md border p-2">
               <Label class="font-bold">
                 {t(
                   "common.media_selection_dialog.microphone_constraints",
@@ -151,7 +151,7 @@ export const createApplyConstraintsDialog = () => {
         </Show>
         <Show when={speakerAudioTrack()}>
           {(track) => (
-            <div class="flex flex-col gap-2 rounded-md border border-border p-2">
+            <div class="border-border flex flex-col gap-2 rounded-md border p-2">
               <Label class="font-bold">
                 {t(
                   "common.media_selection_dialog.speaker_constraints",
@@ -163,7 +163,7 @@ export const createApplyConstraintsDialog = () => {
         </Show>
         <Show when={videoTrack()}>
           {(track) => (
-            <div class="flex flex-col gap-2 rounded-md border border-border p-2">
+            <div class="border-border flex flex-col gap-2 rounded-md border p-2">
               <Label class="font-bold">
                 {t(
                   "common.media_selection_dialog.video_constraints",

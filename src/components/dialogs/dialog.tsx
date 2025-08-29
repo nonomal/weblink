@@ -14,7 +14,9 @@ import {
   ModalOptions,
 } from "./base";
 
-const BaseDialog: Component<BaseModalProps<any>> = (props) => {
+const BaseDialog: Component<BaseModalProps<any>> = (
+  props,
+) => {
   return (
     <Dialog
       open={props.isOpen}

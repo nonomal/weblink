@@ -730,10 +730,6 @@ export default function File() {
               </DropdownMenuTrigger>
               <DropdownMenuContent class="min-w-48">
                 <DropdownMenuGroup>
-                  <DropdownMenuGroupLabel>
-                    {t("common.action.actions")}
-                  </DropdownMenuGroupLabel>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     class="gap-2"
                     onSelect={() => {
@@ -772,7 +768,9 @@ export default function File() {
                     <IconForward class="size-4" />
                     {t("common.action.forward")}
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    variant="destructive"
                     class="gap-2"
                     onSelect={() => {
                       openDeleteDialog(

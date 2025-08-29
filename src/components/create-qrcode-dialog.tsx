@@ -3,7 +3,7 @@ import { clientProfile } from "@/libs/core/store";
 import { joinUrl } from "@/components/join-dialog";
 import { toast } from "solid-sonner";
 import { createDialog } from "@/components/dialogs/dialog";
-import { QRCode } from "@/components/qrcode";
+import { QRCode } from "@/components/common/qrcode";
 import { t } from "@/i18n";
 import { Input } from "@/components/ui/input";
 
@@ -17,7 +17,7 @@ export const createQRCodeDialog = () => {
           <span class="text-lg font-bold">
             {clientProfile.name}&nbsp;
           </span>
-          <span class="text-sm text-muted-foreground">
+          <span class="text-muted-foreground text-sm">
             {t("common.scan_qrcode_dialog.invite", {
               room: clientProfile.roomId,
             })}
@@ -27,7 +27,7 @@ export const createQRCodeDialog = () => {
       content: () => {
         const url = joinUrl();
         return (
-          <div class="flex select-none flex-col items-center gap-2">
+          <div class="flex flex-col items-center gap-2 select-none">
             <div
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -60,8 +60,8 @@ export const createQRCodeDialog = () => {
               />
             </div>
             <Input
-              class="h-8 w-full max-w-sm select-all whitespace-pre-wrap break-all
-                text-xs hover:underline"
+              class="h-8 w-full max-w-sm text-xs break-all whitespace-pre-wrap
+                select-all hover:underline"
               readOnly
               onContextMenu={async (e) => {
                 e.preventDefault();
@@ -85,7 +85,7 @@ export const createQRCodeDialog = () => {
             <p>
               {t("common.scan_qrcode_dialog.description")}
             </p>
-            <p class="mt-2 text-sm text-muted-foreground">
+            <p class="text-muted-foreground mt-2 text-sm">
               {t("common.scan_qrcode_dialog.tip")}
             </p>
           </div>

@@ -39,7 +39,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { Spinner } from "./spinner";
+import { Spinner } from "./common/spinner";
 
 export const createRoomDialog = () => {
   const { open, close, submit, Component } = createDialog({

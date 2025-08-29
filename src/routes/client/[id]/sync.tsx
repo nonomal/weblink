@@ -51,7 +51,7 @@ import { transferManager } from "@/libs/services/transfer-service";
 import { downloadFile } from "@/libs/utils/download-file";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { getInitials } from "@/libs/utils/name";
-import { ConnectionBadge } from "@/components/connection-badge";
+import { ConnectionBadge } from "@/components/common/connection-badge";
 import { makePersisted } from "@solid-primitives/storage";
 import { A, RouteSectionProps } from "@solidjs/router";
 import {
@@ -573,8 +573,8 @@ const Sync = (props: RouteSectionProps) => {
     <>
       <PreviewDialog />
       <DeleteDialog />
-      <div class="absolute inset-0 z-[-1] bg-background/50 backdrop-blur"></div>
-      <div class="flex h-full w-full flex-col gap-2 bg-background/50 p-0">
+      <div class="bg-background/50 absolute inset-0 z-[-1] backdrop-blur"></div>
+      <div class="bg-background/50 flex h-full w-full flex-col gap-2 p-0">
         <div class="flex items-center gap-2 p-2">
           <Button
             as={A}
@@ -639,11 +639,11 @@ const Sync = (props: RouteSectionProps) => {
             tabIndex="0"
             class={cn(
               inputClass,
-              `flex h-8 w-full max-w-md items-center gap-2 bg-background/80
-              px-2 focus-within:ring-1 focus-within:ring-ring`,
+              `bg-background/80 focus-within:ring-ring flex h-8 w-full
+              max-w-md items-center gap-2 px-2 focus-within:ring-1`,
             )}
           >
-            <IconSearch700 class="size-5 text-muted-foreground" />
+            <IconSearch700 class="text-muted-foreground size-5" />
 
             <input
               type="search"
@@ -699,7 +699,7 @@ const Sync = (props: RouteSectionProps) => {
 
         <div class="relative h-full w-full flex-1 overflow-x-auto">
           <Table class="absolute inset-0 text-nowrap">
-            <TableHeader class="sticky top-0 z-10 bg-background/50 backdrop-blur">
+            <TableHeader class="bg-background/50 sticky top-0 z-10 backdrop-blur">
               <TableRow>
                 <For each={table.getHeaderGroups()}>
                   {(headerGroup) => (
@@ -708,8 +708,8 @@ const Sync = (props: RouteSectionProps) => {
                         <TableHead
                           class={cn(
                             header.column.getIsPinned() &&
-                              `bg-background/50 backdrop-blur transition-colors
-                              [tr:hover_&]:bg-muted`,
+                              `bg-background/50 [tr:hover_&]:bg-muted backdrop-blur
+                              transition-colors`,
                           )}
                           style={{
                             ...getCommonPinningStyles(
@@ -735,7 +735,7 @@ const Sync = (props: RouteSectionProps) => {
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
-                      class="h-24 text-center text-lg font-bold text-muted-foreground/50"
+                      class="text-muted-foreground/50 h-24 text-center text-lg font-bold"
                     >
                       {t("common.file_table.no_data")}
                     </TableCell>
@@ -774,8 +774,8 @@ const Sync = (props: RouteSectionProps) => {
                         <TableCell
                           class={cn(
                             cell.column.getIsPinned() &&
-                              `bg-background/50 backdrop-blur transition-colors
-                              [tr:hover_&]:bg-muted`,
+                              `bg-background/50 [tr:hover_&]:bg-muted backdrop-blur
+                              transition-colors`,
                           )}
                           style={{
                             ...getCommonPinningStyles(

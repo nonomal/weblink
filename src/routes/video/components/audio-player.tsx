@@ -6,11 +6,8 @@ import {
   createEffect,
   createMemo,
   createSignal,
-  For,
-  onMount,
   ParentProps,
   Show,
-  Signal,
   useContext,
 } from "solid-js";
 
@@ -37,7 +34,9 @@ export const AudioPlayerProvider = (props: ParentProps) => {
   >([]);
 
   createEffect(() => {
-    const tracks = Object.values(sessionService.clientViewData)
+    const tracks = Object.values(
+      sessionService.clientViewData,
+    )
       .flatMap((client) => {
         client.stream?.addEventListener(
           "addtrack",

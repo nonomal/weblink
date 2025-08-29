@@ -1,5 +1,5 @@
 import { IconArrowUpward } from "@/components/icons";
-import { Spinner } from "@/components/spinner";
+import { Spinner } from "@/components/common/spinner";
 import { Button } from "@/components/ui/button";
 import { onMount, Show } from "solid-js";
 

@@ -1,5 +1,4 @@
 import {
-  Component,
   createEffect,
   createMemo,
   createSignal,
@@ -17,7 +16,7 @@ import {
   parseTurnServer,
   setClientProfile,
 } from "@/libs/core/store";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/common/theme-toggle";
 import {
   Slider,
   SliderFill,
@@ -46,7 +45,7 @@ import {
   parseTurnServers,
   stringifyTurnServers,
 } from "@/options";
-import createAboutDialog from "@/components/about-dialog";
+import createAboutDialog from "@/components/app/about-dialog";
 import { Button } from "@/components/ui/button";
 import {
   IconClose,

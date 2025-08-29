@@ -1,12 +1,11 @@
 import {
   ComponentProps,
   createEffect,
-  createMemo,
   createSignal,
   Show,
   splitProps,
 } from "solid-js";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/libs/cn";
 
 export interface FloatingButtonProps

@@ -1,6 +1,5 @@
 import { cn } from "@/libs/cn";
 import {
-  ComponentProps,
   createSignal,
   JSX,
   ParentProps,
