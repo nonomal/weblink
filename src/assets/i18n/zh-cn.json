@@ -277,6 +277,7 @@
       "avatar_url": "头像 URL",
       "password": {
         "title": "房间密码",
+        "placeholder": "输入或生成一个密码",
         "description": "可选，房间的密码，用于加密客户端之间的信令消息，防止其他人加入，你可以点击按钮生成一个墙密码"
       },
       "auto_join": "下次自动加入"

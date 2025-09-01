@@ -95,6 +95,7 @@ import IconDarkMode from "@material-symbols/svg-400/outlined/dark_mode.svg?compo
 import IconLightMode from "@material-symbols/svg-400/outlined/light_mode.svg?component-solid";
 import IconUploadFile from "@material-symbols/svg-400/outlined/upload_file.svg?component-solid";
 import IconCamera from "@material-symbols/svg-400/outlined/camera.svg?component-solid";
+import IconImage from "@material-symbols/svg-400/outlined/image.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -193,4 +194,5 @@ export {
   IconLightMode,
   IconUploadFile,
   IconCamera,
+  IconImage,
 };

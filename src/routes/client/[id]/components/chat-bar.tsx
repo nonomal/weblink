@@ -18,6 +18,7 @@ import {
   IconAttachFile,
   IconCamera,
   IconFolder,
+  IconImage,
   IconSend,
 } from "@/components/icons";
 import { t } from "@/i18n";
@@ -138,11 +139,12 @@ export const ChatBar: Component<
             />
           </Button>
           <Button as="label" variant="ghost" size="icon">
-            <IconAttachFile class="size-6" />
+            <IconImage class="size-6" />
             <Input
               multiple
               class="hidden"
               type="file"
+              accept="image/*,video/*"
               onChange={(ev) => {
                 ev.currentTarget.files &&
                   handleSendFiles(ev.currentTarget.files);
@@ -150,17 +152,32 @@ export const ChatBar: Component<
             />
           </Button>
           <Button as="label" variant="ghost" size="icon">
-            <IconCamera class="size-6" />
+            <IconAttachFile class="size-6" />
             <Input
+              multiple
               class="hidden"
               type="file"
-              capture="environment"
+              accept={isMobile() ? "application/octet-stream" : "*/*"}
               onChange={(ev) => {
                 ev.currentTarget.files &&
                   handleSendFiles(ev.currentTarget.files);
               }}
             />
           </Button>
+          <Show when={isMobile()}>
+            <Button as="label" variant="ghost" size="icon">
+              <IconCamera class="size-6" />
+              <Input
+                class="hidden"
+                type="file"
+                capture="environment"
+                onChange={(ev) => {
+                  ev.currentTarget.files &&
+                    handleSendFiles(ev.currentTarget.files);
+                }}
+              />
+            </Button>
+          </Show>
         </div>
         <label
           class={cn(
@@ -192,8 +209,8 @@ export const ChatBar: Component<
             placeholder={
               isMobile()
                 ? t(
-                    "client.message_editor.mobile_placeholder",
-                  )
+                  "client.message_editor.mobile_placeholder",
+                )
                 : t("client.message_editor.placeholder")
             }
             value={text()}

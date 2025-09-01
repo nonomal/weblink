@@ -1,27 +1,31 @@
 import { createIsMobile } from "@/libs/hooks/create-mobile";
-import type { Component, ComponentProps } from "solid-js";
+import { useColorMode } from "@kobalte/core";
+import type { Component, ComponentProps, JSX } from "solid-js";
 
 import { Toaster as Sonner } from "solid-sonner";
 
 type ToasterProps = ComponentProps<typeof Sonner>;
 
 const Toaster: Component<ToasterProps> = (props) => {
+  const { colorMode } = useColorMode();
   const isMobile = createIsMobile();
   return (
     <Sonner
-      class="toaster group"
+      theme={colorMode()}
+      class="toaster group [&_*[data-content]]:flex-1"
       position={isMobile() ? "top-center" : "bottom-right"}
+      style={
+        {
+          "--normal-bg": "var(--popover)",
+          "--normal-text": "var(--popover-foreground)",
+          "--normal-border": "var(--border)",
+        } as JSX.CSSProperties
+      }
       toastOptions={{
-        classes: {
-          toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
-          description:
-            "group-[.toast]:text-muted-foreground",
-          actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
-          cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
-        },
+        cancelButtonStyle: {
+          "background-color": "var(--destructive)",
+          "color": "var(--destructive-foreground)",
+        } as JSX.CSSProperties,
       }}
       {...props}
     />

@@ -277,6 +277,7 @@
       "avatar_url": "頭像 URL",
       "password": {
         "title": "房間密碼",
+        "placeholder": "輸入或生成一個密碼",
         "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，防止其他人加入，你可以點擊按鈕生成個強密碼"
       },
       "auto_join": "下次自動加入"

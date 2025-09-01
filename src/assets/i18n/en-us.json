@@ -271,6 +271,7 @@
       "avatar_url": "Avatar URL",
       "password": {
         "title": "Room Password",
+        "placeholder": "Input or generate a password",
         "description": "Optional, the password of the room, used to encrypt the signaling messages sent between clients, preventing others from joining, you can click the button to generate a strong password"
       },
       "auto_join": "Auto Join Next Time"

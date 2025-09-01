@@ -48,7 +48,9 @@ export const createReloadPrompt = () => {
             cancel: {
               label: t("common.action.close"),
             },
+            duration: Infinity,
           },
+
         );
       },
       onOfflineReady() {
