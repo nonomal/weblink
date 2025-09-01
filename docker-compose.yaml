@@ -4,13 +4,16 @@ services:
   weblink:
     build:
       context: .
+      dockerfile: Dockerfile
+    args:
+      # Set your public websocket url here, example:
+      - VITE_WEBSOCKET_URL=ws://192.168.8.100:8080/ws
+      - VITE_STUN_SERVERS=${VITE_STUN_SERVERS}
     ports:
       - "8080:80"
       - "443:443"
     environment:
       - ENABLE_SSL=${ENABLE_SSL:-false}
-      # Set your public websocket url here, example:
-      - VITE_WEBSOCKET_URL=ws://192.168.8.100:8080/ws
     volumes:
       - ./docker/ssl:/etc/nginx/ssl
     depends_on:

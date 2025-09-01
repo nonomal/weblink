@@ -13,6 +13,8 @@ COPY --from=install /temp/prod/node_modules node_modules
 COPY . .
 
 ENV VITE_BACKEND=WEBSOCKET
+ARG VITE_WEBSOCKET_URL
+ARG VITE_STUN_SERVERS
 
 RUN pnpm build
 
