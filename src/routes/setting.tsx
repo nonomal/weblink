@@ -1254,104 +1254,116 @@ export default function Settings() {
           </Collapsible>
           <Separator />
           <div class="flex flex-col gap-2">
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                const { result } =
-                  await openResetOptionsDialog();
-                if (!result) {
-                  return;
-                }
-                setAppOptions(getDefaultAppOptions());
-                toast.success(
-                  t(
-                    "common.notification.reset_options_success",
-                  ),
-                );
-              }}
-              class="gap-1"
-            >
-              <IconDelete class="size-4" />
-              {t("setting.about.reset_options")}
+            <Button onClick={() => open()} class="gap-1">
+              <IconInfo class="size-4" />
+              <span class="w-full text-center">
+                {t("setting.about.title")}
+              </span>
             </Button>
-
-            <Show
-              when={
-                typeof window !== "undefined" &&
-                "caches" in window &&
-                "serviceWorker" in navigator
-              }
-            >
+            <fieldset class="flex flex-col gap-2 border-destructive/50 border-dashed border-2 rounded-md p-2 w-full">
+              {/* <legend>
+                {t("setting.about.title")}
+              </legend> */}
               <Button
                 variant="destructive"
-                class="gap-1"
                 onClick={async () => {
                   const { result } =
-                    await openClearServiceWorkerCacheDialog();
+                    await openResetOptionsDialog();
                   if (!result) {
                     return;
                   }
-
-                  try {
-                    await window.caches
-                      .keys()
-                      .then((keys) => {
-                        return Promise.all(
-                          keys.map((key) => {
-                            return window.caches.delete(
-                              key,
-                            );
-                          }),
-                        );
-                      });
-                    await navigator.serviceWorker
-                      .getRegistrations()
-                      .then((registrations) => {
-                        return Promise.all(
-                          registrations.map(
-                            (registration) => {
-                              return registration.unregister();
-                            },
-                          ),
-                        );
-                      });
-                    toast.success(
-                      t(
-                        "common.notification.clear_cache_success",
-                      ),
-                    );
-                    if (result.reload) {
-                      window.location.reload();
-                    }
-                  } catch (error) {
-                    if (error instanceof Error) {
-                      toast.error(
-                        t(
-                          "common.notification.clear_cache_failed",
-                          { error: error.message },
-                        ),
-                      );
-                    } else {
-                      toast.error(
-                        t(
-                          "common.notification.unknown_error",
-                        ),
-                      );
-                    }
-                  }
+                  setAppOptions(getDefaultAppOptions());
+                  toast.success(
+                    t(
+                      "common.notification.reset_options_success",
+                    ),
+                  );
                 }}
+                class="gap-1"
               >
                 <IconDelete class="size-4" />
-                {t(
-                  "setting.about.clear_service_worker_cache",
-                )}
+                <span class="w-full text-center">
+                  {t("setting.about.reset_options")}
+                </span>
               </Button>
-            </Show>
 
-            <Button onClick={() => open()} class="gap-1">
-              <IconInfo class="size-4" />
-              {t("setting.about.title")}
-            </Button>
+              <Show
+                when={
+                  typeof window !== "undefined" &&
+                  "caches" in window &&
+                  "serviceWorker" in navigator
+                }
+              >
+                <Button
+                  variant="destructive"
+                  class="gap-1"
+                  onClick={async () => {
+                    const { result } =
+                      await openClearServiceWorkerCacheDialog();
+                    if (!result) {
+                      return;
+                    }
+
+                    try {
+                      await window.caches
+                        .keys()
+                        .then((keys) => {
+                          return Promise.all(
+                            keys.map((key) => {
+                              return window.caches.delete(
+                                key,
+                              );
+                            }),
+                          );
+                        });
+                      await navigator.serviceWorker
+                        .getRegistrations()
+                        .then((registrations) => {
+                          return Promise.all(
+                            registrations.map(
+                              (registration) => {
+                                return registration.unregister();
+                              },
+                            ),
+                          );
+                        });
+                      toast.success(
+                        t(
+                          "common.notification.clear_cache_success",
+                        ),
+                      );
+                      if (result.reload) {
+                        window.location.reload();
+                      }
+                    } catch (error) {
+                      if (error instanceof Error) {
+                        toast.error(
+                          t(
+                            "common.notification.clear_cache_failed",
+                            { error: error.message },
+                          ),
+                        );
+                      } else {
+                        toast.error(
+                          t(
+                            "common.notification.unknown_error",
+                          ),
+                        );
+                      }
+                    }
+                  }}
+                >
+                  <IconDelete class="size-4" />
+                  <span class="w-full text-center">
+                    {t(
+                      "setting.about.clear_service_worker_cache",
+                    )}
+                  </span>
+                </Button>
+              </Show>
+            </fieldset>
+
+
           </div>
         </div>
       </div>

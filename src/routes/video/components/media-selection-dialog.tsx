@@ -205,9 +205,9 @@ export const createMediaSelectionDialog = () => {
         audio:
           enableSpeaker && speakers().length !== 0
             ? {
-                deviceId: devices.speaker?.deviceId,
-                ...speakerConstraints,
-              }
+              deviceId: devices.speaker?.deviceId,
+              ...speakerConstraints,
+            }
             : false,
       }),
     );
@@ -253,17 +253,17 @@ export const createMediaSelectionDialog = () => {
         video:
           enableCamera && availableCameras().length !== 0
             ? {
-                deviceId: devices.camera?.deviceId,
-                ...videoConstraints,
-              }
+              deviceId: devices.camera?.deviceId,
+              ...videoConstraints,
+            }
             : undefined,
         audio:
           enableMicrophone &&
-          availableMicrophones().length !== 0
+            availableMicrophones().length !== 0
             ? {
-                deviceId: devices.microphone?.deviceId,
-                ...microphoneConstraints,
-              }
+              deviceId: devices.microphone?.deviceId,
+              ...microphoneConstraints,
+            }
             : undefined,
       }),
     );
@@ -450,7 +450,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseScreenSpeaker() &&
-                  "border-border border py-2",
+                "border-border border py-2",
               )}
             >
               <Switch
@@ -485,11 +485,11 @@ export const createMediaSelectionDialog = () => {
                       <span class="muted">
                         {speakers().length === 0
                           ? t(
-                              "common.media_selection_dialog.no_speaker_available",
-                            )
+                            "common.media_selection_dialog.no_speaker_available",
+                          )
                           : t(
-                              "common.media_selection_dialog.select_speaker",
-                            )}
+                            "common.media_selection_dialog.select_speaker",
+                          )}
                       </span>
                     }
                     onChange={(value) =>
@@ -520,7 +520,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseScreenMicrophone() &&
-                  "border-border border py-2",
+                "border-border border py-2",
               )}
             >
               <Switch
@@ -561,11 +561,11 @@ export const createMediaSelectionDialog = () => {
                       <span class="muted">
                         {availableMicrophones().length === 0
                           ? t(
-                              "common.media_selection_dialog.no_microphone_available",
-                            )
+                            "common.media_selection_dialog.no_microphone_available",
+                          )
                           : t(
-                              "common.media_selection_dialog.select_microphone",
-                            )}
+                            "common.media_selection_dialog.select_microphone",
+                          )}
                       </span>
                     }
                     onChange={(value) => {
@@ -592,7 +592,7 @@ export const createMediaSelectionDialog = () => {
                 </div>
               </Show>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-stretch">
               <Show
                 when={stream()}
                 fallback={
@@ -627,7 +627,7 @@ export const createMediaSelectionDialog = () => {
                   size="sm"
                   variant="destructive"
                   onClick={closeStream}
-                  class="w-full"
+                  class="flex-1"
                 >
                   {t("common.action.close")}
                 </Button>
@@ -642,7 +642,7 @@ export const createMediaSelectionDialog = () => {
                         enableScreenMicrophone(),
                       );
                     }}
-                    class="w-full"
+                    class="flex-1"
                   >
                     {t("common.action.change")}
                   </Button>
@@ -692,7 +692,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseUserCamera() &&
-                  "border-border border py-2",
+                "border-border border py-2",
               )}
             >
               <Switch
@@ -732,11 +732,11 @@ export const createMediaSelectionDialog = () => {
                       <span class="muted">
                         {availableCameras().length === 0
                           ? t(
-                              "common.media_selection_dialog.no_camera_available",
-                            )
+                            "common.media_selection_dialog.no_camera_available",
+                          )
                           : t(
-                              "common.media_selection_dialog.select_camera",
-                            )}
+                            "common.media_selection_dialog.select_camera",
+                          )}
                       </span>
                     }
                     onChange={(value) => {
@@ -767,7 +767,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseUserMicrophone() &&
-                  "border-border border py-2",
+                "border-border border py-2",
               )}
             >
               <Switch
@@ -809,11 +809,11 @@ export const createMediaSelectionDialog = () => {
                       <span class="muted">
                         {availableMicrophones().length === 0
                           ? t(
-                              "common.media_selection_dialog.no_microphone_available",
-                            )
+                            "common.media_selection_dialog.no_microphone_available",
+                          )
                           : t(
-                              "common.media_selection_dialog.select_microphone",
-                            )}
+                            "common.media_selection_dialog.select_microphone",
+                          )}
                       </span>
                     }
                     onChange={(value) => {
