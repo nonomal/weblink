@@ -442,7 +442,7 @@ export default function Settings() {
                 when={
                   import.meta.env.VITE_STUN_SERVERS &&
                   import.meta.env.VITE_STUN_SERVERS !==
-                    appOptions.servers.stuns.join(",")
+                  appOptions.servers.stuns.join(",")
                 }
               >
                 <Button
@@ -520,7 +520,7 @@ export default function Settings() {
                                     result.msg ===
                                       "available"
                                       ? "text-success-foreground"
-                                      : "text-error-foreground",
+                                      : "text-destructive-foreground",
                                   )}
                                 >
                                   <span>
@@ -597,7 +597,7 @@ export default function Settings() {
                 when={
                   import.meta.env.VITE_TURN_SERVERS &&
                   import.meta.env.VITE_TURN_SERVERS !==
-                    turnServersValue().split("\n").join(",")
+                  turnServersValue().split("\n").join(",")
                 }
               >
                 <Button
@@ -691,7 +691,7 @@ export default function Settings() {
                                       result.msg ===
                                         "available"
                                         ? "text-success-foreground"
-                                        : "text-error-foreground",
+                                        : "text-destructive-foreground",
                                     )}
                                   >
                                     <span>
@@ -867,8 +867,8 @@ export default function Settings() {
               getValueLabel={({ values }) =>
                 values[0] === 0
                   ? t(
-                      "setting.sender.compression_level.no_compression",
-                    )
+                    "setting.sender.compression_level.no_compression",
+                  )
                   : `${values[0]}`
               }
               class="gap-2"

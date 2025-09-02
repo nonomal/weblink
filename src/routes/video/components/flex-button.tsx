@@ -14,8 +14,9 @@ export const FlexButton = (
   return (
     <Button
       {...props}
-      class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-        [&:hover>.grid]:grid-cols-[1fr]"
+      size="sm"
+      class="h-8 text-nowrap rounded-full hover:gap-1
+        [&:hover>.grid]:grid-cols-[1fr] gap-0 has-[>svg]:px-2"
     >
       {props.icon}
       <Show when={props.children}>
