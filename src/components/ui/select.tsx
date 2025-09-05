@@ -38,17 +38,23 @@ export const SelectTrigger = <
   return (
     <SelectPrimitive.Trigger
       class={cn(
-        `flex h-9 w-full items-center justify-between rounded-md
-        border border-input bg-transparent px-3 py-2 text-sm
-        shadow-sm ring-offset-background transition-shadow
-        placeholder:text-muted-foreground focus:outline-none
-        focus-visible:ring-[1.5px] focus-visible:ring-ring
-        disabled:cursor-not-allowed disabled:opacity-50`,
+        `border-input ring-offset-background
+        placeholder:text-muted-foreground focus-visible:ring-ring
+        relative flex h-9 w-full items-center justify-end rounded-md
+        border bg-transparent px-3 py-2 text-sm shadow-sm
+        transition-shadow focus:outline-none
+        focus-visible:ring-[1.5px] disabled:cursor-not-allowed
+        disabled:opacity-50`,
         local.class,
       )}
       {...rest}
     >
-      {local.children}
+      <div
+        class="[&>*[data-placeholder-shown]]:text-muted-foreground absolute
+          right-8 left-2 truncate text-left"
+      >
+        {local.children}
+      </div>
       <SelectPrimitive.Icon
         as="svg"
         xmlns="http://www.w3.org/2000/svg"
@@ -89,13 +95,17 @@ export const SelectContent = <
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         class={cn(
-          `relative z-50 min-w-[8rem] overflow-hidden rounded-md border
-          bg-popover text-popover-foreground shadow-md
+          `bg-popover text-popover-foreground
           data-[expanded]:animate-in data-[closed]:animate-out
           data-[closed]:fade-out-0 data-[expanded]:fade-in-0
-          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95`,
+          data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95
+          relative z-50 min-w-[8rem] overflow-hidden rounded-md border
+          shadow-md`,
           local.class,
         )}
+        onFocusOutside={(e) => {
+          e.preventDefault();
+        }}
         {...rest}
       >
         <SelectPrimitive.Listbox class="p-1 focus-visible:outline-none" />
@@ -118,9 +128,9 @@ export const SelectItem = <T extends ValidComponent = "li">(
   return (
     <SelectPrimitive.Item
       class={cn(
-        `relative flex w-full cursor-default select-none items-center
-        rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none
-        focus:bg-accent focus:text-accent-foreground
+        `focus:bg-accent focus:text-accent-foreground relative flex
+        w-full cursor-default items-center rounded-sm py-1.5 pr-8
+        pl-2 text-sm outline-none select-none
         data-[disabled]:pointer-events-none
         data-[disabled]:opacity-50`,
         local.class,

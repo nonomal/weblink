@@ -2,23 +2,24 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  For,
   Show,
 } from "solid-js";
-import { createDialog } from "../../../components/dialogs/dialog";
+import { createDialog } from "@/components/dialogs/dialog";
 import {
   IconMonitor,
   IconSettings,
   IconVideoCam,
-} from "../../../components/icons";
+} from "@/components/icons";
 import {
   Tabs,
   TabsContent,
   TabsIndicator,
   TabsList,
   TabsTrigger,
-} from "../../../components/ui/tabs";
+} from "@/components/ui/tabs";
 import { createStore } from "solid-js/store";
-import { Button } from "../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   createSpeakers,
   createMicrophones,
@@ -26,23 +27,21 @@ import {
 } from "@/libs/utils/devices";
 import { catchErrorAsync } from "@/libs/catch";
 import { toast } from "solid-sonner";
-import { Badge } from "../../../components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../../../components/ui/select";
+} from "@/components/ui/select";
 import { createPermission } from "@solid-primitives/permission";
 import {
   Switch,
   SwitchControl,
   SwitchLabel,
   SwitchThumb,
-} from "../../../components/ui/switch";
+} from "@/components/ui/switch";
 import { t } from "@/i18n";
-import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { localStream } from "@/libs/stream";
 import { cn } from "@/libs/cn";
 import {
@@ -103,15 +102,6 @@ const [enableUserCamera, setEnableUserCamera] =
   });
 
 export const createMediaSelectionDialog = () => {
-  const isMobile = createIsMobile();
-
-  const [selectedTab, setSelectedTab] = createSignal(
-    isMobile() ? "user" : "screen",
-  );
-
-  const [stream, setStream] =
-    createSignal<MediaStream | null>(null);
-
   const cameras = createCameras();
   const microphones = createMicrophones();
   const speakers = createSpeakers();
@@ -123,7 +113,6 @@ export const createMediaSelectionDialog = () => {
         label: cam.label,
         deviceId: cam.deviceId,
       }));
-
     return cams;
   });
 
@@ -134,6 +123,7 @@ export const createMediaSelectionDialog = () => {
         label: spk.label,
         deviceId: spk.deviceId,
       }));
+
     return spks;
   });
 
@@ -144,9 +134,14 @@ export const createMediaSelectionDialog = () => {
         label: mic.label,
         deviceId: mic.deviceId,
       }));
-
     return mics;
   });
+  const [selectedTab, setSelectedTab] = createSignal(
+    canGetDisplayMedia ? "screen" : "user",
+  );
+
+  const [stream, setStream] =
+    createSignal<MediaStream | null>(null);
 
   const cameraPermission = createPermission("camera");
   const microphonePermission =
@@ -205,9 +200,9 @@ export const createMediaSelectionDialog = () => {
         audio:
           enableSpeaker && speakers().length !== 0
             ? {
-              deviceId: devices.speaker?.deviceId,
-              ...speakerConstraints,
-            }
+                deviceId: devices.speaker?.deviceId,
+                ...speakerConstraints,
+              }
             : false,
       }),
     );
@@ -253,17 +248,17 @@ export const createMediaSelectionDialog = () => {
         video:
           enableCamera && availableCameras().length !== 0
             ? {
-              deviceId: devices.camera?.deviceId,
-              ...videoConstraints,
-            }
+                deviceId: devices.camera?.deviceId,
+                ...videoConstraints,
+              }
             : undefined,
         audio:
           enableMicrophone &&
-            availableMicrophones().length !== 0
+          availableMicrophones().length !== 0
             ? {
-              deviceId: devices.microphone?.deviceId,
-              ...microphoneConstraints,
-            }
+                deviceId: devices.microphone?.deviceId,
+                ...microphoneConstraints,
+              }
             : undefined,
       }),
     );
@@ -384,7 +379,6 @@ export const createMediaSelectionDialog = () => {
             </TabsTrigger>
             <TabsIndicator />
           </TabsList>
-
           <Show
             when={stream()}
             fallback={
@@ -450,7 +444,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseScreenSpeaker() &&
-                "border-border border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -481,17 +475,9 @@ export const createMediaSelectionDialog = () => {
                   <Select<MediaDeviceInfoType>
                     class="flex-1"
                     value={devices.speaker}
-                    placeholder={
-                      <span class="muted">
-                        {speakers().length === 0
-                          ? t(
-                            "common.media_selection_dialog.no_speaker_available",
-                          )
-                          : t(
-                            "common.media_selection_dialog.select_speaker",
-                          )}
-                      </span>
-                    }
+                    placeholder={t(
+                      "common.media_selection_dialog.select_speaker",
+                    )}
                     onChange={(value) =>
                       setDevices("speaker", value)
                     }
@@ -500,11 +486,14 @@ export const createMediaSelectionDialog = () => {
                     options={availableSpeakers()}
                     itemComponent={(props) => (
                       <SelectItem item={props.item}>
-                        {props.item.rawValue?.label}
+                        {props.item.rawValue.label}
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
+                    <SelectTrigger
+                      aria-label="Select speaker"
+                      class="hover:bg-muted/80 border-none transition-colors"
+                    >
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -520,7 +509,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseScreenMicrophone() &&
-                "border-border border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -557,17 +546,9 @@ export const createMediaSelectionDialog = () => {
                   <Select<MediaDeviceInfoType>
                     class="flex-1"
                     value={devices.microphone}
-                    placeholder={
-                      <span class="muted">
-                        {availableMicrophones().length === 0
-                          ? t(
-                            "common.media_selection_dialog.no_microphone_available",
-                          )
-                          : t(
-                            "common.media_selection_dialog.select_microphone",
-                          )}
-                      </span>
-                    }
+                    placeholder={t(
+                      "common.media_selection_dialog.select_microphone",
+                    )}
                     onChange={(value) => {
                       setDevices("microphone", value);
                     }}
@@ -576,11 +557,14 @@ export const createMediaSelectionDialog = () => {
                     options={availableMicrophones()}
                     itemComponent={(props) => (
                       <SelectItem item={props.item}>
-                        {props.item.rawValue?.label}
+                        {props.item.rawValue.label}
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
+                    <SelectTrigger
+                      aria-label="Select speaker"
+                      class="hover:bg-muted/80 border-none transition-colors"
+                    >
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -592,7 +576,7 @@ export const createMediaSelectionDialog = () => {
                 </div>
               </Show>
             </div>
-            <div class="flex gap-2 items-stretch">
+            <div class="flex items-stretch gap-2">
               <Show
                 when={stream()}
                 fallback={
@@ -692,7 +676,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseUserCamera() &&
-                "border-border border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -728,17 +712,9 @@ export const createMediaSelectionDialog = () => {
                   <Select<MediaDeviceInfoType>
                     class="flex-1"
                     value={devices.camera}
-                    placeholder={
-                      <span class="muted">
-                        {availableCameras().length === 0
-                          ? t(
-                            "common.media_selection_dialog.no_camera_available",
-                          )
-                          : t(
-                            "common.media_selection_dialog.select_camera",
-                          )}
-                      </span>
-                    }
+                    placeholder={t(
+                      "common.media_selection_dialog.select_camera",
+                    )}
                     onChange={(value) => {
                       setDevices("camera", value);
                     }}
@@ -747,11 +723,14 @@ export const createMediaSelectionDialog = () => {
                     options={availableCameras()}
                     itemComponent={(props) => (
                       <SelectItem item={props.item}>
-                        {props.item.rawValue?.label}
+                        {props.item.rawValue.label}
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
+                    <SelectTrigger
+                      aria-label="Select camera"
+                      class="hover:bg-muted/80 border-none transition-colors"
+                    >
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -767,7 +746,7 @@ export const createMediaSelectionDialog = () => {
               class={cn(
                 "flex flex-col gap-2 rounded-lg px-2",
                 canUseUserMicrophone() &&
-                "border-border border py-2",
+                  "border-border border py-2",
               )}
             >
               <Switch
@@ -805,17 +784,9 @@ export const createMediaSelectionDialog = () => {
                   <Select<MediaDeviceInfoType>
                     class="flex-1"
                     value={devices.microphone}
-                    placeholder={
-                      <span class="muted">
-                        {availableMicrophones().length === 0
-                          ? t(
-                            "common.media_selection_dialog.no_microphone_available",
-                          )
-                          : t(
-                            "common.media_selection_dialog.select_microphone",
-                          )}
-                      </span>
-                    }
+                    placeholder={t(
+                      "common.media_selection_dialog.select_microphone",
+                    )}
                     onChange={(value) => {
                       setDevices("microphone", value);
                     }}
@@ -824,11 +795,14 @@ export const createMediaSelectionDialog = () => {
                     options={availableMicrophones()}
                     itemComponent={(props) => (
                       <SelectItem item={props.item}>
-                        {props.item.rawValue?.label}
+                        {props.item.rawValue.label}
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger class="hover:bg-muted/80 border-none transition-colors">
+                    <SelectTrigger
+                      aria-label="Select microphone"
+                      class="hover:bg-muted/80 border-none transition-colors"
+                    >
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label

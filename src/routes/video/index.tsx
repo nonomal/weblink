@@ -1,9 +1,9 @@
+import "./index.css";
 import {
   createEffect,
   createMemo,
   createSignal,
   For,
-  onCleanup,
   onMount,
   Show,
   untrack,
@@ -156,59 +156,6 @@ export default function Video() {
 
   return (
     <>
-      <style>{`
-        .grid-stack-item:hover .custom-drag-handle {
-          opacity: 1 !important;
-        }
-        
-        .custom-drag-handle:hover {
-          background-color: rgba(0, 0, 0, 0.7) !important;
-        }
-        
-        .grid-stack-item > .ui-resizable-handle {
-          opacity: 0;
-          transition: all 0.3s ease;
-        }
-        
-        .grid-stack-item:hover > .ui-resizable-handle {
-          opacity: 1;
-        }
-        
-        .grid-stack-item > .ui-resizable-n,
-        .grid-stack-item > .ui-resizable-e,
-        .grid-stack-item > .ui-resizable-s,
-        .grid-stack-item > .ui-resizable-w,
-        .grid-stack-item > .ui-resizable-ne,
-        .grid-stack-item > .ui-resizable-nw,
-        .grid-stack-item > .ui-resizable-sw {
-          display: none !important;
-        }
-        
-        .grid-stack-item > .ui-resizable-se {
-          width: 20px !important;
-          height: 20px !important;
-          background: transparent !important;
-          border: none !important;
-          position: absolute !important;
-          bottom: 0 !important;
-          right: 0 !important;
-          top: auto !important;
-          left: auto !important;
-          transform: none !important;
-          margin: 0 !important;
-          border-bottom: 4px solid transparent !important;
-          border-right: 4px solid transparent !important;
-          border-bottom-right-radius: 6px !important;
-          transition: all 0.2s ease !important;
-          cursor: se-resize !important;
-          z-index: 10 !important;
-        }
-        
-        .grid-stack-item:hover > .ui-resizable-se {
-          border-bottom-color: var(--color-muted-foreground) !important;
-          border-right-color: var(--color-muted-foreground) !important;
-        }
-      `}</style>
       <div
         class={cn(
           "fixed bottom-8 left-1/2 size-28 -translate-x-1/2",
