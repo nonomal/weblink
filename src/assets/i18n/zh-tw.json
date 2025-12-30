@@ -148,6 +148,16 @@
         "degradation_preference": {
           "title": "降級偏好",
           "description": "當網路條件較差時，應用程式將優先考慮視訊質量還是幀率"
+        },
+        "preferred_video_codec": {
+          "title": "首選視訊編碼器",
+          "description": "在協商視訊串流時優先使用該編碼器。僅對新建連接生效。",
+          "auto": "自動"
+        },
+        "preferred_audio_codec": {
+          "title": "首選音訊編碼器",
+          "description": "在協商音訊串流時優先使用該編碼器。僅對新建連接生效。",
+          "auto": "自動"
         }
       }
     },

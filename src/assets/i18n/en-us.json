@@ -153,6 +153,16 @@
         "degradation_preference": {
           "title": "Degradation Preference",
           "description": "When the network condition is poor, the application will prioritize video quality or frame rate"
+        },
+        "preferred_video_codec": {
+          "title": "Preferred Video Codec",
+          "description": "Prefer using this codec when negotiating the video stream. Takes effect for new connections.",
+          "auto": "Auto"
+        },
+        "preferred_audio_codec": {
+          "title": "Preferred Audio Codec",
+          "description": "Prefer using this codec when negotiating the audio stream. Takes effect for new connections.",
+          "auto": "Auto"
         }
       }
     }

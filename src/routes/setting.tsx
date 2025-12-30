@@ -101,6 +101,60 @@ export default function Settings() {
     ).getPropertyValue("--radius");
   });
 
+  const canGetRtpCapabilities = createMemo(() => {
+    return (
+      typeof RTCRtpSender !== "undefined" &&
+      "getCapabilities" in RTCRtpSender
+    );
+  });
+
+  const preferredVideoCodecOptions = createMemo(() => {
+    const options: string[] = ["auto"];
+    if (!canGetRtpCapabilities()) return options;
+    const capabilities =
+      RTCRtpSender.getCapabilities("video");
+    const codecs = capabilities?.codecs ?? [];
+    const mimeTypes = new Set<string>();
+    codecs.forEach((c) => {
+      const mt = String(c.mimeType ?? "")
+        .trim()
+        .toLowerCase();
+      if (!mt.startsWith("video/")) return;
+      if (
+        [
+          "video/rtx",
+          "video/red",
+          "video/ulpfec",
+          "video/flexfec-03",
+        ].includes(mt)
+      ) {
+        return;
+      }
+      mimeTypes.add(mt);
+    });
+    return options.concat(Array.from(mimeTypes).sort());
+  });
+
+  const preferredAudioCodecOptions = createMemo(() => {
+    const options: string[] = ["auto"];
+    if (!canGetRtpCapabilities()) return options;
+    const capabilities =
+      RTCRtpSender.getCapabilities("audio");
+    const codecs = capabilities?.codecs ?? [];
+    const mimeTypes = new Set<string>();
+    codecs.forEach((c) => {
+      const mt = String(c.mimeType ?? "")
+        .trim()
+        .toLowerCase();
+      if (!mt.startsWith("audio/")) return;
+      if (["audio/telephone-event"].includes(mt)) {
+        return;
+      }
+      mimeTypes.add(mt);
+    });
+    return options.concat(Array.from(mimeTypes).sort());
+  });
+
   const turnServersValue = createMemo(() => {
     return stringifyTurnServers(appOptions.servers.turns);
   });
@@ -442,7 +496,7 @@ export default function Settings() {
                 when={
                   import.meta.env.VITE_STUN_SERVERS &&
                   import.meta.env.VITE_STUN_SERVERS !==
-                  appOptions.servers.stuns.join(",")
+                    appOptions.servers.stuns.join(",")
                 }
               >
                 <Button
@@ -597,7 +651,7 @@ export default function Settings() {
                 when={
                   import.meta.env.VITE_TURN_SERVERS &&
                   import.meta.env.VITE_TURN_SERVERS !==
-                  turnServersValue().split("\n").join(",")
+                    turnServersValue().split("\n").join(",")
                 }
               >
                 <Button
@@ -867,8 +921,8 @@ export default function Settings() {
               getValueLabel={({ values }) =>
                 values[0] === 0
                   ? t(
-                    "setting.sender.compression_level.no_compression",
-                  )
+                      "setting.sender.compression_level.no_compression",
+                    )
                   : `${values[0]}`
               }
               class="gap-2"
@@ -943,7 +997,6 @@ export default function Settings() {
                   </h3>
                   <Button variant="outline">
                     <IconExpandAll class="size-4" />
-                    <span></span>
                   </Button>
                 </div>
               )}
@@ -1250,6 +1303,100 @@ export default function Settings() {
                   )}
                 </p>
               </label>
+              <label class="flex flex-col gap-2">
+                <Label>
+                  {t(
+                    "setting.advanced_settings.stream.preferred_video_codec.title",
+                  )}
+                </Label>
+                <Select
+                  value={
+                    appOptions.preferredVideoCodec ?? "auto"
+                  }
+                  disabled={!canGetRtpCapabilities()}
+                  onChange={(value) => {
+                    setAppOptions(
+                      "preferredVideoCodec",
+                      value === "auto" ? null : value,
+                    );
+                  }}
+                  options={preferredVideoCodecOptions()}
+                  itemComponent={(props) => (
+                    <SelectItem item={props.item}>
+                      {props.item.rawValue === "auto"
+                        ? t(
+                            "setting.advanced_settings.stream.preferred_video_codec.auto",
+                          )
+                        : props.item.rawValue}
+                    </SelectItem>
+                  )}
+                >
+                  <SelectTrigger>
+                    <SelectValue<string>>
+                      {(state) =>
+                        state.selectedOption() === "auto"
+                          ? t(
+                              "setting.advanced_settings.stream.preferred_video_codec.auto",
+                            )
+                          : state.selectedOption()
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+                <p class="muted">
+                  {t(
+                    "setting.advanced_settings.stream.preferred_video_codec.description",
+                  )}
+                </p>
+              </label>
+              <label class="flex flex-col gap-2">
+                <Label>
+                  {t(
+                    "setting.advanced_settings.stream.preferred_audio_codec.title",
+                  )}
+                </Label>
+                <Select
+                  value={
+                    appOptions.preferredAudioCodec ?? "auto"
+                  }
+                  disabled={!canGetRtpCapabilities()}
+                  onChange={(value) => {
+                    setAppOptions(
+                      "preferredAudioCodec",
+                      value === "auto" ? null : value,
+                    );
+                  }}
+                  options={preferredAudioCodecOptions()}
+                  itemComponent={(props) => (
+                    <SelectItem item={props.item}>
+                      {props.item.rawValue === "auto"
+                        ? t(
+                            "setting.advanced_settings.stream.preferred_audio_codec.auto",
+                          )
+                        : props.item.rawValue}
+                    </SelectItem>
+                  )}
+                >
+                  <SelectTrigger>
+                    <SelectValue<string>>
+                      {(state) =>
+                        state.selectedOption() === "auto"
+                          ? t(
+                              "setting.advanced_settings.stream.preferred_audio_codec.auto",
+                            )
+                          : state.selectedOption()
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+                <p class="muted">
+                  {t(
+                    "setting.advanced_settings.stream.preferred_audio_codec.description",
+                  )}
+                </p>
+              </label>
             </CollapsibleContent>
           </Collapsible>
           <Separator />
@@ -1260,7 +1407,10 @@ export default function Settings() {
                 {t("setting.about.title")}
               </span>
             </Button>
-            <fieldset class="flex flex-col gap-2 border-destructive/50 border-dashed border-2 rounded-md p-2 w-full">
+            <fieldset
+              class="border-destructive/50 flex w-full flex-col gap-2 rounded-md
+                border-2 border-dashed p-2"
+            >
               {/* <legend>
                 {t("setting.about.title")}
               </legend> */}
@@ -1362,8 +1512,6 @@ export default function Settings() {
                 </Button>
               </Show>
             </fieldset>
-
-
           </div>
         </div>
       </div>

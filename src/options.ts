@@ -63,6 +63,8 @@ export type AppOption = {
   // Stream
   videoMaxBitrate: number;
   degradationPreference: RTCDegradationPreference;
+  preferredVideoCodec: string | null;
+  preferredAudioCodec: string | null;
 };
 
 export function parseTurnServers(
@@ -161,6 +163,8 @@ export const getDefaultAppOptions = () => {
     // todo: add dialog to prompt user the file size
     maxFileSize: 1024 * 1024 * 1024, // 1GB
     degradationPreference: "balanced",
+    preferredVideoCodec: null,
+    preferredAudioCodec: null,
   } satisfies AppOption;
 };
 

@@ -148,6 +148,16 @@
         "degradation_preference": {
           "title": "降级偏好",
           "description": "在视频通话中，当网络条件较差时，应用程序将优先考虑视频质量还是帧率"
+        },
+        "preferred_video_codec": {
+          "title": "首选视频编码器",
+          "description": "在协商视频流时优先使用该编码器。仅对新建连接生效。",
+          "auto": "自动"
+        },
+        "preferred_audio_codec": {
+          "title": "首选音频编码器",
+          "description": "在协商音频流时优先使用该编码器。仅对新建连接生效。",
+          "auto": "自动"
         }
       }
     },

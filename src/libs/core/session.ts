@@ -57,6 +57,95 @@ export class PeerSession {
   private remoteStream: MediaStream | null = null;
   private status: PeerSessionStatus = "init";
   private listenController: AbortController | null = null;
+
+  private applyPreferredCodecPreferences(
+    pc: RTCPeerConnection,
+  ) {
+    if (typeof RTCRtpSender === "undefined") return;
+    if (!("getCapabilities" in RTCRtpSender)) return;
+
+    const orderCodecs = (
+      codecs: any[],
+      preferredMimeType: string,
+    ) => {
+      if (!preferredMimeType) return codecs;
+
+      const normalizedPreferred = preferredMimeType
+        .trim()
+        .toLowerCase();
+      const preferred = codecs.filter(
+        (c) =>
+          c.mimeType.trim().toLowerCase() ===
+          normalizedPreferred,
+      );
+      if (preferred.length === 0) return codecs;
+
+      const preferredPayloadTypes = new Set<number>();
+      preferred.forEach((c) => {
+        const pt = c.preferredPayloadType;
+        if (typeof pt === "number")
+          preferredPayloadTypes.add(pt);
+      });
+      const rtxForPreferred = codecs.filter((c) => {
+        if (c.mimeType.trim().toLowerCase() !== "video/rtx")
+          return false;
+        const fmtp = c.sdpFmtpLine;
+        if (!fmtp) return false;
+        const match = fmtp.match(/\bapt=(\d+)\b/);
+        if (!match) return false;
+        const apt = Number(match[1]);
+        if (Number.isNaN(apt)) return false;
+        return preferredPayloadTypes.has(apt);
+      });
+
+      const preferredSet = new Set(preferred);
+      const rtxSet = new Set(rtxForPreferred);
+      const rest = codecs.filter(
+        (c) => !preferredSet.has(c) && !rtxSet.has(c),
+      );
+      return [...preferred, ...rtxForPreferred, ...rest];
+    };
+
+    const applyForKind = (
+      kind: "audio" | "video",
+      preferredMimeType: string,
+    ) => {
+      if (!preferredMimeType) return;
+      const capabilities =
+        RTCRtpSender.getCapabilities(kind);
+      const codecs = capabilities?.codecs;
+      if (!codecs || codecs.length === 0) return;
+
+      const ordered = orderCodecs(
+        codecs,
+        preferredMimeType,
+      );
+      pc.getTransceivers().forEach((transceiver) => {
+        const transceiverKind =
+          transceiver.sender.track?.kind ??
+          transceiver.receiver.track?.kind;
+        if (transceiverKind !== kind) return;
+        if (!("setCodecPreferences" in transceiver)) return;
+        try {
+          transceiver.setCodecPreferences(ordered);
+        } catch (e) {
+          console.warn(
+            `[PeerSession] setCodecPreferences failed for ${kind}:`,
+            e,
+          );
+        }
+      });
+    };
+
+    applyForKind(
+      "video",
+      appOptions.preferredVideoCodec ?? "",
+    );
+    applyForKind(
+      "audio",
+      appOptions.preferredAudioCodec ?? "",
+    );
+  }
   constructor(
     sender: SignalingService,
     {
@@ -339,6 +428,8 @@ export class PeerSession {
         direction: "recvonly",
       });
     }
+
+    this.applyPreferredCodecPreferences(pc);
     this.dispatchEvent("peerconnectioninit", pc);
 
     this.popSignalCache();
@@ -780,6 +871,8 @@ export class PeerSession {
         return pc.addTrack(track, stream);
       }),
     );
+
+    this.applyPreferredCodecPreferences(pc);
 
     this.renegotiate();
   }
