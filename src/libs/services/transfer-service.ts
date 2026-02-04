@@ -1,28 +1,18 @@
 import {
-  createStore,
-  SetStoreFunction,
-} from "solid-js/store";
-import {
-  FileTransferer,
   TransferMode,
+  type FileTransferer,
 } from "../core/file-transferer";
+import { FileReceiver } from "../core/file-receiver";
+import { FileSender } from "../core/file-sender";
 import { FileID } from "../core/type";
 import { ChunkCache } from "../cache/chunk-cache";
-import { appOptions } from "@/options";
 import { FileMetaData } from "../cache";
+import { appState, setAppState } from "@/libs/state/app-state";
 
 class TransfererFactory {
-  readonly transferers: Record<FileID, FileTransferer>;
-  private setTransferers: SetStoreFunction<
-    Record<FileID, FileTransferer>
-  >;
+  readonly transferers: Record<FileID, FileTransferer> =
+    appState.transfer.transferers;
   private channels: Record<FileID, RTCDataChannel[]> = {};
-  constructor() {
-    const [transferers, setTransferers] =
-      createStore<Record<FileID, FileTransferer>>();
-    this.transferers = transferers;
-    this.setTransferers = setTransferers;
-  }
 
   getTransferer(id: FileID) {
     if (this.transferers[id]) {
@@ -50,9 +40,20 @@ class TransfererFactory {
     }
 
     transferer.close();
-    this.setTransferers(id, undefined!);
+    setAppState("transfer", "transferers", id, undefined!);
   }
 
+  createTransfer(cache: ChunkCache): FileReceiver;
+  createTransfer(
+    cache: ChunkCache,
+    mode: TransferMode.Receive,
+    info?: FileMetaData,
+  ): FileReceiver;
+  createTransfer(
+    cache: ChunkCache,
+    mode: TransferMode.Send,
+    info?: FileMetaData,
+  ): FileSender;
   createTransfer(
     cache: ChunkCache,
     mode: TransferMode = TransferMode.Receive,
@@ -63,15 +64,23 @@ class TransfererFactory {
     if (tf) {
       this.destroyTransfer(tf.id);
     }
-    const transferer = new FileTransferer({
-      cache,
-      info,
-      bufferedAmountLowThreshold:
-        appOptions.bufferedAmountLowThreshold,
-      blockSize: appOptions.blockSize,
-      compressionLevel: appOptions.compressionLevel,
-      mode: mode,
-    });
+
+    const transferer =
+      mode === TransferMode.Send
+        ? new FileSender({
+            cache,
+            info,
+            bufferedAmountLowThreshold:
+              appState.options.bufferedAmountLowThreshold,
+            blockSize: appState.options.blockSize,
+            compressionLevel: appState.options.compressionLevel,
+          })
+        : new FileReceiver({
+            cache,
+            info,
+            bufferedAmountLowThreshold:
+              appState.options.bufferedAmountLowThreshold,
+          });
 
     const flushInterval = setInterval(() => {
       cache.flush();
@@ -87,7 +96,7 @@ class TransfererFactory {
           await cache.flush();
           cache.getFile();
         } else {
-          if (appOptions.automaticCacheDeletion)
+          if (appState.options.automaticCacheDeletion)
             cache.cleanup();
         }
         this.destroyTransfer(transferer.id);
@@ -146,9 +155,21 @@ class TransfererFactory {
       },
     );
 
-    this.setTransferers(fileId, transferer);
+    setAppState(
+      "transfer",
+      "transferers",
+      fileId,
+      transferer,
+    );
     return transferer;
   }
 }
 
-export const transferManager = new TransfererFactory();
+export let transferManager: TransfererFactory;
+
+export function createTransferManager() {
+  if (!transferManager) {
+    transferManager = new TransfererFactory();
+  }
+  return transferManager;
+}

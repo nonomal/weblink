@@ -19,7 +19,7 @@ import {
   ProgressLabel,
   ProgressValueLabel,
 } from "@/components/ui/progress";
-import { clientProfile } from "@/libs/core/store";
+import { appState } from "@/libs/state/app-state";
 import {
   FileTransferer,
   TransferMode,
@@ -40,8 +40,6 @@ import {
   StoreMessage,
   TextMessage,
 } from "@/libs/core/message";
-import { cacheManager } from "@/libs/services/cache-serivce";
-import { transferManager } from "@/libs/services/transfer-service";
 import { PortableContextMenu } from "@/components/portable-contextmenu";
 import {
   IconCheck,
@@ -61,7 +59,6 @@ import {
   IconDraft,
   IconPause,
 } from "@/components/icons";
-import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
 import { Dynamic } from "solid-js/web";
 import { createTimeAgo } from "@/libs/utils/timeago";
@@ -127,23 +124,25 @@ const FileMessageCard: Component<FileMessageCardProps> = (
     () => {
       if (!props.message.fid) return null;
       return (
-        transferManager.transferers[props.message.fid] ??
+        appState.transfer.transferers[props.message.fid] ??
         null
       );
     },
   );
 
   const isSender = createMemo(() => {
-    return props.message.client === clientProfile.clientId;
+    return (
+      props.message.client === appState.profile.clientId
+    );
   });
 
   const targetClientInfo = createMemo(() => {
     if (isSender()) {
-      return sessionService.clientViewData[
+      return appState.session.clientViewData[
         props.message.target
       ];
     }
-    return sessionService.clientViewData[
+    return appState.session.clientViewData[
       props.message.client
     ];
   });
@@ -151,7 +150,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
   const cacheData = createMemo<FileMetaData | undefined>(
     () =>
       props.message.fid
-        ? cacheManager.cacheInfo[props.message.fid]
+        ? appState.cache.cacheInfo[props.message.fid]
         : undefined,
   );
   // sender local cache status
@@ -528,10 +527,10 @@ export const MessageContent: Component<MessageCardProps> = (
   ]);
   const targetClientInfo = createMemo(
     () =>
-      sessionService.clientViewData[local.message.target],
+      appState.session.clientViewData[local.message.target],
   );
   const session = createMemo(
-    () => sessionService.sessions[local.message.target],
+    () => appState.session.sessions[local.message.target],
   );
   const {
     open: openPreviewDialog,
@@ -704,7 +703,7 @@ export const MessageContent: Component<MessageCardProps> = (
                     </ContextMenuItem>
                     <Show
                       when={
-                        ClipboardItem.supports(
+                        (ClipboardItem as any).supports?.(
                           "image/svg+xml",
                         ) && f().type === "image/svg+xml"
                       }
@@ -837,7 +836,7 @@ export const MessageContent: Component<MessageCardProps> = (
           class={cn(
             `flex flex-col gap-1 rounded-md p-2 shadow backdrop-blur
             select-none sm:select-text`,
-            clientProfile.clientId === props.message.client
+            appState.profile.clientId === props.message.client
               ? "self-end bg-lime-200/80 dark:bg-indigo-900/80"
               : "border-border bg-background/80 self-start border",
             local.class,
@@ -970,7 +969,7 @@ export interface MessageChatProps
 }
 
 async function getFileFromCache(fid: FileID) {
-  const cache = cacheManager.getCache(fid);
+  const cache = appState.cache.caches[fid];
   if (!cache) return null;
   return await cache.getFile();
 }

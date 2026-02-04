@@ -14,7 +14,6 @@ import { Toaster } from "@/components/ui/sonner";
 import ChatProvider from "./components/chat/chat-provider";
 import Nav from "@/components/app/nav";
 import {
-  clientProfile,
   getRandomAvatar,
   setClientProfile,
 } from "./libs/core/store";
@@ -25,11 +24,9 @@ import {
   joinUrl,
 } from "./components/join-dialog";
 import { toast } from "solid-sonner";
-import { sessionService } from "./libs/services/session-service";
 import createAboutDialog from "./components/app/about-dialog";
 import {
   appInitialized,
-  appOptions,
   backgroundImage,
   localeOptionsMap,
   localFromLanguage,
@@ -73,6 +70,8 @@ import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
 import { AudioPlayerProvider } from "./routes/video/components/audio-player";
 import { AppWakeLock } from "./components/app/wakelock";
+import { createInitialization } from "@/libs/initialization";
+import { appState } from "@/libs/state/app-state";
 
 const InnerApp = (props: ParentProps) => {
   const { joinRoom } = useWebRTC();
@@ -94,7 +93,7 @@ const InnerApp = (props: ParentProps) => {
   } = createAboutDialog();
 
   const onJoinRoom = async () => {
-    if (clientProfile.initalJoin) {
+    if (appState.profile.initalJoin) {
       const result = await openRoomDialog();
       if (result.cancel) {
         return;
@@ -109,14 +108,14 @@ const InnerApp = (props: ParentProps) => {
 
   const parseSearchParams = async () => {
     let reset = false;
-    if (search.id && search.id !== clientProfile.roomId) {
+    if (search.id && search.id !== appState.profile.roomId) {
       setClientProfile("roomId", search.id as string);
       setSearch({ id: null }, { replace: true });
       reset = true;
     }
     if (
       search.pwd &&
-      search.pwd !== clientProfile.password
+      search.pwd !== appState.profile.password
     ) {
       setClientProfile("password", search.pwd as string);
       setSearch({ pwd: null }, { replace: true });
@@ -143,7 +142,7 @@ const InnerApp = (props: ParentProps) => {
         search.turn as string,
       ) as TurnServerOptions[];
 
-      if (!appOptions.servers.turns) {
+      if (!appState.options.servers.turns) {
         setAppOptions("servers", "turns", []);
       }
 
@@ -173,8 +172,9 @@ const InnerApp = (props: ParentProps) => {
     }
 
     if (
-      !sessionService.clientService &&
-      clientProfile.autoJoin
+      appState.session.clientServiceStatus ===
+        "disconnected" &&
+      appState.profile.autoJoin
     ) {
       await onJoinRoom();
     }
@@ -193,7 +193,7 @@ const InnerApp = (props: ParentProps) => {
       id: v4(),
       type: "text",
       client: instructorClientId,
-      target: clientProfile.clientId,
+      target: appState.profile.clientId,
       data: t("common.starter.welcome"),
       createdAt: Date.now(),
       status: "received",
@@ -203,7 +203,7 @@ const InnerApp = (props: ParentProps) => {
       id: v4(),
       type: "text",
       client: instructorClientId,
-      target: clientProfile.clientId,
+      target: appState.profile.clientId,
       data: t("common.starter.tip1"),
       createdAt: Date.now(),
       status: "received",
@@ -213,7 +213,7 @@ const InnerApp = (props: ParentProps) => {
       id: v4(),
       type: "text",
       client: instructorClientId,
-      target: clientProfile.clientId,
+      target: appState.profile.clientId,
       data: t("common.starter.tip2"),
       createdAt: Date.now(),
       status: "received",
@@ -222,7 +222,7 @@ const InnerApp = (props: ParentProps) => {
 
   onMount(async () => {
     parseSearchParams();
-    if (!localeOptionsMap[appOptions.locale]) {
+    if (!localeOptionsMap[appState.options.locale]) {
       setAppOptions(
         "locale",
         localFromLanguage(navigator.language),
@@ -269,7 +269,6 @@ const InnerApp = (props: ParentProps) => {
       });
     });
   }
-  const { roomStatus } = useWebRTC();
   const isMobile = createIsMobile();
 
   return (
@@ -278,7 +277,7 @@ const InnerApp = (props: ParentProps) => {
       <QRCodeDialogComponent />
       <AboutDialogComponent />
       <ForwardDialogComponent />
-      <AppWakeLock enabled={appOptions.wakeLock} />
+      <AppWakeLock enabled={appState.options.wakeLock} />
 
       <div class="flex h-full min-h-full w-full flex-col md:flex-row">
         <div
@@ -310,10 +309,10 @@ const InnerApp = (props: ParentProps) => {
                 }}
               >
                 <AvatarImage
-                  src={clientProfile.avatar ?? undefined}
+                  src={appState.profile.avatar ?? undefined}
                 />
                 <AvatarFallback>
-                  {getInitials(clientProfile.name)}
+                  {getInitials(appState.profile.name)}
                 </AvatarFallback>
               </HoverCardTrigger>
               <HoverCardContent class="flex flex-col gap-2">
@@ -321,18 +320,18 @@ const InnerApp = (props: ParentProps) => {
                   <Avatar class="size-12">
                     <AvatarImage
                       src={
-                        clientProfile.avatar ?? undefined
+                        appState.profile.avatar ?? undefined
                       }
                     />
                     <AvatarFallback>
-                      {getInitials(clientProfile.name)}
+                      {getInitials(appState.profile.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div class="flex flex-col gap-2">
                     <p class="text-sm font-medium">
-                      {clientProfile.name}
+                      {appState.profile.name}
                     </p>
-                    <Show when={roomStatus.roomId}>
+                    <Show when={appState.roomStatus.roomId}>
                       {(room) => (
                         <p class="text-muted-foreground flex items-center gap-1 text-xs">
                           <IconHome class="size-4" />{" "}
@@ -340,7 +339,7 @@ const InnerApp = (props: ParentProps) => {
                         </p>
                       )}
                     </Show>
-                    <Show when={roomStatus.profile}>
+                    <Show when={appState.roomStatus.profile}>
                       {(profile) => (
                         <p class="text-muted-foreground flex items-center gap-1 text-xs">
                           <IconPermContactCalendar class="size-4" />
@@ -477,6 +476,11 @@ export default function App(props: RouteSectionProps) {
     return <></>;
   }
 
+  void createInitialization().catch((err) => {
+    console.error(err);
+    toast.error(err?.message ?? String(err));
+  });
+
   return (
     <>
       <MetaProvider>
@@ -484,7 +488,7 @@ export default function App(props: RouteSectionProps) {
           {`
           :root {
             --background-image: url(${backgroundImage() ?? ""});
-            --background-image-opacity: ${appOptions.backgroundImageOpacity};
+            --background-image-opacity: ${appState.options.backgroundImageOpacity};
           }`}
         </Style>
         <Toaster />

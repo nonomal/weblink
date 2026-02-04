@@ -53,6 +53,7 @@ import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/input";
 import { cn } from "@/libs/cn";
 import { cacheManager } from "@/libs/services/cache-serivce";
+import { appState } from "@/libs/state/app-state";
 import {
   Checkbox,
   CheckboxControl,
@@ -82,7 +83,7 @@ import {
 } from "@solid-primitives/resize-observer";
 import { createStore } from "solid-js/store";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { appOptions, setAppOptions } from "@/options";
+import { setAppOptions } from "@/options";
 import { createForwardDialog } from "@/components/forward-dialog";
 import { FileMetaData } from "@/libs/cache";
 import { downloadFile } from "@/libs/utils/download-file";
@@ -115,7 +116,7 @@ const StorageStatus = (props: { class?: string }) => {
     createSignal<StorageEstimate | null>(null);
 
   createEffect(async () => {
-    if (Object.values(cacheManager.caches).length >= 0) {
+    if (Object.values(appState.cache.caches).length >= 0) {
       const estimate = await navigator.storage.estimate();
       setStorage(estimate);
     }
@@ -448,7 +449,7 @@ export default function File() {
                           <DropdownMenuItem
                             class="gap-2"
                             onSelect={() => {
-                              cacheManager.caches[
+                              appState.cache.caches[
                                 row.original.id
                               ]?.mergeFile();
                             }}
@@ -521,8 +522,8 @@ export default function File() {
     });
 
   const data = createMemo(() =>
-    cacheManager.status() === "ready"
-      ? Object.values(cacheManager.cacheInfo)
+    appState.cache.status === "ready"
+      ? Object.values(appState.cache.cacheInfo)
       : [],
   );
 
@@ -659,7 +660,7 @@ export default function File() {
                       fileSize: file.size,
                       mimetype: file.type,
                       lastModified: file.lastModified,
-                      chunkSize: appOptions.chunkSize,
+                      chunkSize: appState.options.chunkSize,
                       createdAt: Date.now(),
                       file,
                     });
@@ -696,7 +697,7 @@ export default function File() {
                       fileSize: file.size,
                       mimetype: file.type,
                       lastModified: file.lastModified,
-                      chunkSize: appOptions.chunkSize,
+                      chunkSize: appState.options.chunkSize,
                       createdAt: Date.now(),
                       file,
                     });
@@ -918,7 +919,7 @@ export default function File() {
                 fileSize: file.size,
                 mimetype: file.type,
                 lastModified: file.lastModified,
-                chunkSize: appOptions.chunkSize,
+                chunkSize: appState.options.chunkSize,
                 createdAt: Date.now(),
                 file,
               });

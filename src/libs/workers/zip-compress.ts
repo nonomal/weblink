@@ -25,7 +25,7 @@ self.onmessage = async (
     const zipData = zipSync(bufferMap, {});
 
     const zipFile = new File(
-      [zipData],
+      [zipData.buffer as ArrayBuffer],
       `${folderName}.zip`,
       {
         type: "application/zip",

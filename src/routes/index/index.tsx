@@ -20,12 +20,10 @@ import { ClientID, ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { makePersisted } from "@solid-primitives/storage";
 import { IconPerson } from "@/components/icons";
-import { messageStores } from "@/libs/core/message";
 import { t } from "@/i18n";
 import { cn } from "@/libs/cn";
-import { sessionService } from "@/libs/services/session-service";
-import { appOptions } from "@/options";
 import { UserItem } from "./components/client-list-item";
+import { appState } from "@/libs/state/app-state";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {
@@ -58,11 +56,11 @@ export default function Home(props: RouteSectionProps) {
   });
 
   createEffect(() => {
-    const clientId = appOptions.redirectToClient;
+    const clientId = appState.options.redirectToClient;
     if (!clientId) return;
 
     const clientInfo =
-      sessionService.clientViewData[clientId];
+      appState.session.clientViewData[clientId];
     if (clientInfo) {
       navigate(`/client/${clientId}/chat`, {
         replace: true,
@@ -131,19 +129,19 @@ const ClientList = (props: {
     }
   });
   const getLastMessage = (clientId: ClientID) =>
-    messageStores.messages.findLast(
+    appState.message.messages.findLast(
       (message) =>
         message.client === clientId ||
         message.target === clientId,
     );
 
   const clntWithLastMsg = createMemo(() => {
-    return messageStores.clients
+    return appState.message.clients
       .map((client) => {
         return {
           client,
           message: getLastMessage(client.clientId),
-          clientInfo: sessionService.clientViewData[
+          clientInfo: appState.session.clientViewData[
             client.clientId
           ] as ClientInfo | undefined,
         };

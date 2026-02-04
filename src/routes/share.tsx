@@ -4,10 +4,10 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { ClientInfo } from "@/libs/core/type";
-import { sessionService } from "@/libs/services/session-service";
 import { getInitials } from "@/libs/utils/name";
 import { RouteSectionProps } from "@solidjs/router";
 import { createMemo, For } from "solid-js";
+import { appState } from "@/libs/state/app-state";
 
 const ShareClientItem = (props: { client: ClientInfo }) => {
   return (
@@ -27,7 +27,7 @@ const ShareClientItem = (props: { client: ClientInfo }) => {
 
 const Share = (props: RouteSectionProps) => {
   const availableClients = createMemo(() =>
-    Object.values(sessionService.clientViewData).filter(
+    Object.values(appState.session.clientViewData).filter(
       (client) => client.onlineStatus === "online",
     ),
   );

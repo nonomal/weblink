@@ -2,48 +2,23 @@ import {
   ChunkCache,
   IDBChunkCache,
 } from "@/libs/cache/chunk-cache";
-import {
-  createStore,
-  SetStoreFunction,
-} from "solid-js/store";
 import { FileID } from "@/libs/core/type";
-import { Accessor, createSignal, Setter } from "solid-js";
-import { appOptions } from "@/options";
+import type { Accessor } from "solid-js";
 import {
   ChunkCacheInfo,
   DBNAME_PREFIX,
   FileMetaData,
 } from "@/libs/cache";
 import { v4 } from "uuid";
+import { appState, setAppState } from "@/libs/state/app-state";
 
-class FileCacheFactory {
-  status: Accessor<"ready" | "loading">;
-  private setStatus: Setter<"ready" | "loading">;
-  readonly cacheInfo: Record<FileID, FileMetaData>;
-  private setCacheInfo: SetStoreFunction<
-    Record<FileID, FileMetaData>
-  >;
-  readonly caches: Record<FileID, ChunkCache>;
-  private setCaches: SetStoreFunction<
-    Record<FileID, ChunkCache>
-  >;
-  constructor() {
-    const [caches, setCaches] = createStore<
-      Record<FileID, ChunkCache>
-    >({});
-    this.caches = caches;
-    this.setCaches = setCaches;
-    const [status, setStatus] = createSignal<
-      "ready" | "loading"
-    >("loading");
-    this.status = status;
-    this.setStatus = setStatus;
-    const [cacheInfo, setCacheInfo] = createStore<
-      Record<FileID, FileMetaData>
-    >({});
-    this.cacheInfo = cacheInfo;
-    this.setCacheInfo = setCacheInfo;
-  }
+export class FileCacheFactory {
+  status: Accessor<"ready" | "loading"> = () =>
+    appState.cache.status;
+  readonly cacheInfo: Record<FileID, FileMetaData> =
+    appState.cache.cacheInfo;
+  readonly caches: Record<FileID, ChunkCache> =
+    appState.cache.caches;
 
   async initialize() {
     try {
@@ -65,7 +40,7 @@ class FileCacheFactory {
     } catch (e) {
       console.error(e);
     } finally {
-      this.setStatus("ready");
+      setAppState("cache", "status", "ready");
     }
   }
 
@@ -80,7 +55,7 @@ class FileCacheFactory {
     const cache = this.caches[id];
     if (cache) {
       await cache.cleanup();
-      this.setCaches(id, undefined!);
+      setAppState("cache", "caches", id, undefined!);
     }
     return;
   }
@@ -92,22 +67,22 @@ class FileCacheFactory {
 
     const cache = new IDBChunkCache({
       id,
-      maxMomeryCacheSize: appOptions.maxMomeryCacheSlices,
+      maxMomeryCacheSize: appState.options.maxMomeryCacheSlices,
     });
 
     cache.addEventListener("update", (ev) => {
       if (ev.detail) {
-        this.setCacheInfo(id, ev.detail);
+        setAppState("cache", "cacheInfo", id, ev.detail);
       }
     });
 
     cache.addEventListener("cleanup", () => {
-      this.setCacheInfo(id, undefined!);
-      this.setCaches(id, undefined!);
+      setAppState("cache", "cacheInfo", id, undefined!);
+      setAppState("cache", "caches", id, undefined!);
     });
 
     cache.addEventListener("complete", (ev) => {
-      if (appOptions.automaticDownload) {
+      if (appState.options.automaticDownload) {
         const file = ev.detail;
         const a = document.createElement("a");
         a.href = URL.createObjectURL(file);
@@ -121,7 +96,7 @@ class FileCacheFactory {
   }
 
   private async addCache(id: FileID, cache: ChunkCache) {
-    this.setCaches(id, cache);
+    setAppState("cache", "caches", id, cache);
   }
 
   async getStorages(): Promise<ChunkCacheInfo[] | null> {
@@ -147,6 +122,11 @@ class FileCacheFactory {
   }
 }
 
-export const cacheManager = new FileCacheFactory();
+export let cacheManager: FileCacheFactory;
 
-cacheManager.initialize();
+export function createCacheManager() {
+  if (!cacheManager) {
+    cacheManager = new FileCacheFactory();
+  }
+  return cacheManager;
+}

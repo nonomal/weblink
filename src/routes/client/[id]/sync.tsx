@@ -42,12 +42,9 @@ import {
   ChunkMetaData,
 } from "@/libs/cache";
 import { cn } from "@/libs/cn";
-import { messageStores } from "@/libs/core/message";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { ClientInfo, Client } from "@/libs/core/type";
-import { cacheManager } from "@/libs/services/cache-serivce";
 import { sessionService } from "@/libs/services/session-service";
-import { transferManager } from "@/libs/services/transfer-service";
 import { downloadFile } from "@/libs/utils/download-file";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { getInitials } from "@/libs/utils/name";
@@ -91,6 +88,7 @@ import { catchErrorAsync } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
 import { IconFile } from "@/components/icon-file";
 import { getTotalChunkCount } from "@/libs/cache/chunk-cache";
+import { appState } from "@/libs/state/app-state";
 
 type ChunkStatus =
   | "not_started"
@@ -172,7 +170,7 @@ const Sync = (props: RouteSectionProps) => {
         const status = statuses()[row.index];
         const progress = createMemo(() => {
           const info =
-            cacheManager.cacheInfo[row.original.id];
+            appState.cache.cacheInfo[row.original.id];
           if (!info?.chunkCount) return 0;
           return (
             (info?.chunkCount / getTotalChunkCount(info)) *
@@ -256,7 +254,7 @@ const Sync = (props: RouteSectionProps) => {
       header: () => <div class="w-9" />,
       cell: ({ row }) => {
         const localCache = createMemo(
-          () => cacheManager.caches[row.original.id],
+          () => appState.cache.caches[row.original.id],
         );
 
         const status = statuses()[row.index];
@@ -319,7 +317,7 @@ const Sync = (props: RouteSectionProps) => {
                       <>
                         <Show
                           when={
-                            cacheManager.cacheInfo[
+                            appState.cache.cacheInfo[
                               row.original.id
                             ]?.isComplete
                           }
@@ -504,21 +502,22 @@ const Sync = (props: RouteSectionProps) => {
   );
 
   const session = createMemo(
-    () => sessionService.sessions[props.params.id],
+    () => appState.session.sessions[props.params.id],
   );
 
   const client = createMemo<Client | undefined>(() =>
-    messageStores.clients.find(
+    appState.message.clients.find(
       (c) => c.clientId === props.params.id,
     ),
   );
 
   const clientInfo = createMemo<ClientInfo | undefined>(
-    () => sessionService.clientViewData[props.params.id],
+    () => appState.session.clientViewData[props.params.id],
   );
 
   createEffect(() => {
     const s = session();
+    if (!s) return;
     if (clientInfo()?.messageChannel) {
       s.sendMessage({
         id: v4(),
@@ -532,10 +531,10 @@ const Sync = (props: RouteSectionProps) => {
 
   const createStatus = (chunk: ChunkMetaData) => {
     const cacheInfo = createMemo(
-      () => cacheManager.cacheInfo[chunk.id],
+      () => appState.cache.cacheInfo[chunk.id],
     );
     const transfer = createMemo<FileTransferer | undefined>(
-      () => transferManager.transferers[chunk.id],
+      () => appState.transfer.transferers[chunk.id],
     );
 
     const [status, setStatus] =
@@ -748,7 +747,7 @@ const Sync = (props: RouteSectionProps) => {
                       const status = statuses()[row.index];
                       if (status() === "complete") {
                         const file =
-                          cacheManager.cacheInfo[
+                          appState.cache.cacheInfo[
                             row.original.id
                           ]?.file;
                         if (file) {

@@ -1,11 +1,11 @@
 import { useColorMode } from "@kobalte/core";
-import { clientProfile } from "@/libs/core/store";
 import { joinUrl } from "@/components/join-dialog";
 import { toast } from "solid-sonner";
 import { createDialog } from "@/components/dialogs/dialog";
 import { QRCode } from "@/components/common/qrcode";
 import { t } from "@/i18n";
 import { Input } from "@/components/ui/input";
+import { appState } from "@/libs/state/app-state";
 
 export const createQRCodeDialog = () => {
   const { colorMode } = useColorMode();
@@ -15,11 +15,11 @@ export const createQRCodeDialog = () => {
       description: () => (
         <>
           <span class="text-lg font-bold">
-            {clientProfile.name}&nbsp;
+            {appState.profile.name}&nbsp;
           </span>
           <span class="text-muted-foreground text-sm">
             {t("common.scan_qrcode_dialog.invite", {
-              room: clientProfile.roomId,
+              room: appState.profile.roomId,
             })}
           </span>
         </>
@@ -55,7 +55,7 @@ export const createQRCodeDialog = () => {
                     : "#000000"
                 }
                 light="#00000000"
-                logo={clientProfile.avatar ?? undefined}
+                logo={appState.profile.avatar ?? undefined}
                 logoShape="circle"
               />
             </div>

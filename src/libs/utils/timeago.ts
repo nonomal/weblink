@@ -5,8 +5,8 @@ import {
 import { Accessor } from "solid-js";
 import { formatRelative, formatDistance } from "date-fns";
 import { enUS, zhCN, zhTW } from "date-fns/locale";
-import { appOptions } from "@/options";
 import { t } from "@/i18n";
+import { appState } from "@/libs/state/app-state";
 type MaybeAccessor<T> = T | Accessor<T>;
 
 const locale = {
@@ -29,7 +29,7 @@ export const createTimeAgo = (
         return formatDistance(target, now, {
           locale:
             locale[
-              appOptions.locale as keyof typeof locale
+              appState.options.locale as keyof typeof locale
             ] ?? enUS,
           addSuffix: true,
         });
@@ -37,7 +37,7 @@ export const createTimeAgo = (
         return formatRelative(target, now, {
           locale:
             locale[
-              appOptions.locale as keyof typeof locale
+              appState.options.locale as keyof typeof locale
             ] ?? enUS,
         });
       }

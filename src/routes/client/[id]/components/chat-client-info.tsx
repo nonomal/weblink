@@ -5,14 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { t } from "@/i18n";
-import { messageStores } from "@/libs/core/message";
 import { PeerSession } from "@/libs/core/session";
 import {
   ClientInfo,
   Client,
   ClientID,
 } from "@/libs/core/type";
-import { sessionService } from "@/libs/services/session-service";
 import {
   createEffect,
   createMemo,
@@ -21,6 +19,7 @@ import {
   onMount,
   Show,
 } from "solid-js";
+import { appState } from "@/libs/state/app-state";
 
 const clientInfoDialog = () => {
   const [target, setTarget] = createSignal<ClientID | null>(
@@ -29,12 +28,12 @@ const clientInfoDialog = () => {
 
   const info = createMemo<ClientInfo | null>(() => {
     return target()
-      ? (sessionService.clientViewData[target()!] ?? null)
+      ? (appState.session.clientViewData[target()!] ?? null)
       : null;
   });
   const client = createMemo<Client | null>(() => {
     return target()
-      ? (messageStores.clients.find(
+      ? (appState.message.clients.find(
           (client) => client.clientId === target(),
         ) ?? null)
       : null;
@@ -42,7 +41,7 @@ const clientInfoDialog = () => {
 
   const session = createMemo<PeerSession | null>(() => {
     return target()
-      ? sessionService.sessions[target()!]
+      ? appState.session.sessions[target()!]
       : null;
   });
 

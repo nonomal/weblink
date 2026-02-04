@@ -13,7 +13,6 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { getInitials } from "@/libs/utils/name";
-import { sessionService } from "@/libs/services/session-service";
 import {
   CommandDialog,
   CommandEmpty,
@@ -31,6 +30,7 @@ import { useWebRTC } from "@/libs/core/rtc-context";
 import { toast } from "solid-sonner";
 import { FileMetaData } from "@/libs/cache";
 import { t } from "@/i18n";
+import { appState } from "@/libs/state/app-state";
 
 const ForwardClientItem = (props: {
   checked: boolean;
@@ -114,7 +114,7 @@ export const createForwardDialog = () => {
   };
   const [open, setOpen] = createSignal(false);
   const availableClients = createMemo(() =>
-    Object.values(sessionService.clientViewData).filter(
+    Object.values(appState.session.clientViewData).filter(
       (client) => client.onlineStatus === "online",
     ),
   );

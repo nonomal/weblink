@@ -1,5 +1,5 @@
 import { catchErrorAsync } from "@/libs/catch";
-import { sessionService } from "@/libs/services/session-service";
+import { appState } from "@/libs/state/app-state";
 import {
   Accessor,
   createContext,
@@ -35,7 +35,7 @@ export const AudioPlayerProvider = (props: ParentProps) => {
 
   createEffect(() => {
     const tracks = Object.values(
-      sessionService.clientViewData,
+      appState.session.clientViewData,
     )
       .flatMap((client) => {
         client.stream?.addEventListener(
@@ -63,7 +63,10 @@ export const AudioPlayerProvider = (props: ParentProps) => {
             return track;
           });
       })
-      .filter((track) => track !== undefined);
+      .filter(
+        (track): track is MediaStreamTrack =>
+          track !== undefined,
+      );
     setTracks(tracks);
   });
 

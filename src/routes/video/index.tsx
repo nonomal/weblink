@@ -8,13 +8,11 @@ import {
   Show,
   untrack,
 } from "solid-js";
-import { useWebRTC } from "@/libs/core/rtc-context";
 import { Button } from "@/components/ui/button";
 import {
   localStream,
   setDisplayStream,
 } from "@/libs/stream";
-import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
 import {
   IconDelete,
@@ -39,7 +37,6 @@ import { ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { Dynamic } from "solid-js/web";
 import { createMediaSelectionDialog } from "./components/media-selection-dialog";
-import { clientProfile } from "@/libs/core/store";
 import { createApplyConstraintsDialog } from "./components/track-constaints";
 import { useAudioPlayer } from "./components/audio-player";
 import {
@@ -83,13 +80,12 @@ import {
   SwitchThumb,
 } from "@/components/ui/switch";
 import { makePersisted } from "@solid-primitives/storage";
+import { appState } from "@/libs/state/app-state";
 
 const [removedClientIds, setRemovedClientIds] =
   createSignal<string[]>([]);
 
 export default function Video() {
-  const { roomStatus } = useWebRTC();
-
   const isMobile = createIsMobile();
 
   const { setPlay, playState, hasAudio } = useAudioPlayer();
@@ -142,7 +138,7 @@ export default function Video() {
 
   createEffect(() => {
     const availableClientIds = Object.values(
-      sessionService.clientViewData,
+      appState.session.clientViewData,
     ).map((client) => client.clientId);
     const newRemovedClientIds = untrack(
       removedClientIds,
@@ -179,10 +175,10 @@ export default function Video() {
             sm:top-0"
         >
           <h4 class="h4">
-            {roomStatus.roomId ? (
+            {appState.roomStatus.roomId ? (
               <p class="space-x-1 [&>*]:align-middle [&>svg]:inline">
                 <IconMeetingRoom class="inline size-6" />
-                <span>{roomStatus.roomId}</span>
+                <span>{appState.roomStatus.roomId}</span>
               </p>
             ) : (
               t("video.title")
@@ -228,7 +224,7 @@ export default function Video() {
                           {(clientId) => (
                             <Show
                               when={
-                                sessionService
+                                appState.session
                                   .clientViewData[clientId]
                               }
                             >
@@ -333,7 +329,7 @@ export default function Video() {
           <SavedGridItem
             w={6}
             h={6}
-            id={clientProfile.clientId}
+            id={appState.profile.clientId}
             noRemovable
           >
             <GridItemContent class="bg-muted relative rounded-lg shadow-lg">
@@ -348,12 +344,14 @@ export default function Video() {
               <VideoDisplay
                 class="absolute inset-0"
                 stream={localStream()}
-                name={`${clientProfile.name} (You)`}
-                avatar={clientProfile.avatar ?? undefined}
+                name={`${appState.profile.name} (You)`}
+                avatar={appState.profile.avatar ?? undefined}
                 muted={true}
               >
                 <LocalToolbar
-                  client={roomStatus.profile ?? undefined}
+                  client={
+                    appState.roomStatus.profile ?? undefined
+                  }
                   class={cn(
                     "absolute top-1 flex gap-1",
                     "left-1/2 -translate-x-1/2",
@@ -364,7 +362,7 @@ export default function Video() {
           </SavedGridItem>
           <For
             each={Object.values(
-              sessionService.clientViewData,
+              appState.session.clientViewData,
             ).filter(
               (client) =>
                 !removedClientIds().includes(

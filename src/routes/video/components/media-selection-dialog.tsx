@@ -54,7 +54,7 @@ import {
 } from "./track-constaints";
 import { makePersisted } from "@solid-primitives/storage";
 import { VideoDisplay } from "./video-display";
-import { clientProfile } from "@/libs/core/store";
+import { appState } from "@/libs/state/app-state";
 
 export type MediaDeviceInfoType = {
   label: string;
@@ -388,7 +388,7 @@ export const createMediaSelectionDialog = () => {
                 name={t(
                   "common.media_selection_dialog.current",
                 )}
-                avatar={clientProfile.avatar ?? undefined}
+                avatar={appState.profile.avatar ?? undefined}
               />
             }
           >
@@ -399,7 +399,7 @@ export const createMediaSelectionDialog = () => {
               name={t(
                 "common.media_selection_dialog.preview",
               )}
-              avatar={clientProfile.avatar ?? undefined}
+              avatar={appState.profile.avatar ?? undefined}
             />
           </Show>
           <TabsContent

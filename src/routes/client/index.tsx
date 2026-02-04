@@ -1,11 +1,9 @@
 import { Component, Match, Show, Switch } from "solid-js";
 import { t } from "@/i18n";
-import { sessionService } from "@/libs/services/session-service";
 import { createRoomDialog } from "@/components/join-dialog";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/common/spinner";
-import { clientProfile } from "@/libs/core/store";
 import {
   IconEditSquare,
   IconLogin,
@@ -14,8 +12,9 @@ import {
 } from "@/components/icons";
 import { createQRCodeDialog } from "@/components/create-qrcode-dialog";
 import { toast } from "solid-sonner";
+import { appState } from "@/libs/state/app-state";
 const Client: Component = (props) => {
-  const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
+  const { joinRoom, leaveRoom } = useWebRTC();
   const {
     open: openRoomDialog,
     Component: RoomDialogComponent,
@@ -38,14 +37,14 @@ const Client: Component = (props) => {
         <Switch>
           <Match
             when={
-              sessionService.clientServiceStatus() ===
+              appState.session.clientServiceStatus ===
               "connected"
             }
           >
             <div class="flex flex-col items-center gap-2">
               <p class="text-xl font-bold">
                 {t("client.index.after_join.title", {
-                  room: roomStatus.roomId,
+                  room: appState.roomStatus.roomId,
                 })}
               </p>
               <p class="text-muted-foreground text-sm">
@@ -79,7 +78,7 @@ const Client: Component = (props) => {
           </Match>
           <Match
             when={
-              sessionService.clientServiceStatus() ===
+              appState.session.clientServiceStatus ===
               "connecting"
             }
           >
@@ -95,7 +94,7 @@ const Client: Component = (props) => {
           </Match>
           <Match
             when={
-              sessionService.clientServiceStatus() ===
+              appState.session.clientServiceStatus ===
               "disconnected"
             }
           >
@@ -125,7 +124,7 @@ const Client: Component = (props) => {
                 {t("client.index.edit_profile")}
               </span>
             </Button>
-            <Show when={!clientProfile.initalJoin}>
+            <Show when={!appState.profile.initalJoin}>
               <Button
                 class="gap-2"
                 onClick={() =>

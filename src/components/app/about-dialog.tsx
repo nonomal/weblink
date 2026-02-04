@@ -1,8 +1,6 @@
 import { t } from "@/i18n";
 import { createDialog } from "../dialogs/dialog";
 import IconGitHub from "@/assets/icons/github-mark.svg?component-solid";
-import IconGithubWhite from "@/assets/icons/github-mark-white.svg?component-solid";
-import { setAppOptions } from "@/options";
 
 const createAboutDialog = () => {
   const {

@@ -24,7 +24,7 @@ import {
 import { t } from "@/i18n";
 import { createSendItemPreviewDialog } from "@/components/preview-dialog";
 import { toast } from "solid-sonner";
-import { appOptions } from "@/options";
+import { appState } from "@/libs/state/app-state";
 
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import {
@@ -220,7 +220,7 @@ export const ChatBar: Component<
             onPaste={async (ev) => {
               if (
                 navigator.clipboard &&
-                appOptions.enableClipboard
+                appState.options.enableClipboard
               ) {
                 if (!isMobile()) {
                   ev.stopPropagation();
@@ -293,7 +293,7 @@ export const ChatBar: Component<
           when={
             isMobile() &&
             navigator.clipboard &&
-            appOptions.enableClipboard
+            appState.options.enableClipboard
           }
         >
           <p class="text-muted-foreground text-xs">

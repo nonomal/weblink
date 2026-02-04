@@ -30,7 +30,6 @@ import {
   StoreMessage,
 } from "@/libs/core/message";
 import { ChatBar } from "@/routes/client/[id]/components/chat-bar";
-import { sessionService } from "@/libs/services/session-service";
 import {
   IconArrowDownward,
   IconClose,
@@ -40,13 +39,13 @@ import { t } from "@/i18n";
 import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
 import { v4 } from "uuid";
-import { appOptions } from "@/options";
 import { handleDropItems } from "@/libs/utils/process-file";
 import { ClientInfo, Client } from "@/libs/core/type";
 import { catchErrorAsync } from "@/libs/catch";
 import { ChatMoreMessageButton } from "./components/chat-more-message-button";
 import { MessageContent } from "./components/message";
 import { ChatHeader } from "./components/chat-header";
+import { appState } from "@/libs/state/app-state";
 
 export default function ClientPage(
   props: RouteSectionProps,
@@ -55,15 +54,15 @@ export default function ClientPage(
   const { sendFile } = useWebRTC();
   const client = createMemo<Client | null>(
     () =>
-      messageStores.clients.find(
+      appState.message.clients.find(
         (client) => client.clientId === props.params.id,
       ) ?? null,
   );
   const clientInfo = createMemo<ClientInfo | undefined>(
-    () => sessionService.clientViewData[props.params.id],
+    () => appState.session.clientViewData[props.params.id],
   );
   createEffect(() => {
-    if (messageStores.status() === "ready" && !client()) {
+    if (appState.message.status === "ready" && !client()) {
       navigate("/", { replace: true });
     }
   });
@@ -90,7 +89,7 @@ export default function ClientPage(
 
   const allMessages = createMemo<StoreMessage[]>(
     () =>
-      messageStores.messages.filter(
+      appState.message.messages.filter(
         (message) =>
           message.client === props.params.id ||
           message.target === props.params.id,
@@ -121,7 +120,7 @@ export default function ClientPage(
       setMessages([]);
     }
 
-    if (messageStores.status() === "ready") {
+    if (appState.message.status === "ready") {
       getMoreMessages(20);
     }
   });
@@ -192,7 +191,7 @@ export default function ClientPage(
   const session = createMemo<PeerSession | null>(
     () =>
       (clientInfo() &&
-        sessionService.sessions[clientInfo()!.clientId]) ??
+        appState.session.sessions[clientInfo()!.clientId]) ??
       null,
   );
 
@@ -219,7 +218,10 @@ export default function ClientPage(
   };
 
   onMount(() => {
-    if (navigator.clipboard && appOptions.enableClipboard) {
+    if (
+      navigator.clipboard &&
+      appState.options.enableClipboard
+    ) {
       window.addEventListener("paste", onClipboard);
 
       onCleanup(() => {

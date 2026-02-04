@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["dom", "dom.iterable", "esnext", "WebWorker"],
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
@@ -22,5 +22,7 @@
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "include": ["src", "test"],
+  "exclude": ["dist", "dev-dist", "scripts"]
 }

@@ -1,7 +1,4 @@
-import {
-  clientProfile,
-  setClientProfile,
-} from "@/libs/core/store";
+import { setClientProfile } from "@/libs/core/store";
 import { createDialog } from "./dialogs/dialog";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -27,9 +24,7 @@ import {
 import { IconCasino, IconLogin, IconLogout } from "./icons";
 import { toast } from "solid-sonner";
 import { t } from "@/i18n";
-import { sessionService } from "@/libs/services/session-service";
 import {
-  appOptions,
   getDefaultAppOptions,
 } from "@/options";
 import { getInitials } from "@/libs/utils/name";
@@ -40,6 +35,7 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { Spinner } from "./common/spinner";
+import { appState } from "@/libs/state/app-state";
 
 export const createRoomDialog = () => {
   const { open, close, submit, Component } = createDialog({
@@ -53,7 +49,7 @@ export const createRoomDialog = () => {
           onSubmit={(ev) => {
             ev.preventDefault();
             setClientProfile("initalJoin", false);
-            submit(clientProfile);
+            submit(appState.profile);
           }}
         >
           <label class="flex flex-col gap-2">
@@ -64,7 +60,7 @@ export const createRoomDialog = () => {
             <Input
               required
               readonly
-              value={clientProfile.clientId}
+              value={appState.profile.clientId}
               readOnly={true}
             />
 
@@ -78,7 +74,7 @@ export const createRoomDialog = () => {
             </span>
             <Input
               required
-              value={clientProfile.roomId}
+              value={appState.profile.roomId}
               onInput={(ev) =>
                 setClientProfile(
                   "roomId",
@@ -96,7 +92,7 @@ export const createRoomDialog = () => {
                 placeholder={t(
                   "common.join_form.password.placeholder",
                 )}
-                value={clientProfile.password ?? ""}
+                value={appState.profile.password ?? ""}
                 onInput={(ev) =>
                   setClientProfile(
                     "password",
@@ -126,7 +122,7 @@ export const createRoomDialog = () => {
             </span>
             <Input
               required
-              value={clientProfile.name}
+              value={appState.profile.name}
               onInput={(ev) =>
                 setClientProfile(
                   "name",
@@ -142,7 +138,7 @@ export const createRoomDialog = () => {
             <Input
               placeholder="Enter a link or upload an image"
               type="url"
-              value={clientProfile.avatar ?? ""}
+              value={appState.profile.avatar ?? ""}
               onInput={(ev) =>
                 setClientProfile(
                   "avatar",
@@ -170,17 +166,17 @@ export const createRoomDialog = () => {
               />
               <Avatar>
                 <AvatarImage
-                  src={clientProfile.avatar ?? undefined}
+                  src={appState.profile.avatar ?? undefined}
                 />
                 <AvatarFallback>
-                  {getInitials(clientProfile.name)}
+                  {getInitials(appState.profile.name)}
                 </AvatarFallback>
               </Avatar>
             </div>
           </label>
           <Switch
             class="flex items-center justify-between"
-            checked={clientProfile.autoJoin}
+            checked={appState.profile.autoJoin}
             onChange={(isChecked) =>
               setClientProfile("autoJoin", isChecked)
             }
@@ -211,30 +207,30 @@ export const createRoomDialog = () => {
 
 export const joinUrl = createMemo(() => {
   const url = new URL(location.origin);
-  url.searchParams.append("id", clientProfile.roomId);
-  if (clientProfile.password)
-    url.searchParams.append("pwd", clientProfile.password);
+  url.searchParams.append("id", appState.profile.roomId);
+  if (appState.profile.password)
+    url.searchParams.append("pwd", appState.profile.password);
 
-  if (appOptions.shareServersWithOthers) {
+  if (appState.options.shareServersWithOthers) {
     // compare if user's appOptions is different from defaultAppOptions
     const defaultAppOptions = getDefaultAppOptions();
     if (
-      appOptions.servers.stuns.length !==
+      appState.options.servers.stuns.length !==
         defaultAppOptions.servers.stuns.length &&
-      appOptions.servers.stuns.some(
+      appState.options.servers.stuns.some(
         (server, index) =>
           server !== defaultAppOptions.servers.stuns[index],
       )
     ) {
       url.searchParams.append(
         "stun",
-        JSON.stringify(appOptions.servers.stuns),
+        JSON.stringify(appState.options.servers.stuns),
       );
     }
     if (
-      appOptions.servers.turns.length !==
+      appState.options.servers.turns.length !==
         defaultAppOptions.servers.turns.length &&
-      appOptions.servers.turns.some(
+      appState.options.servers.turns.some(
         (server, index) =>
           server.url !==
           defaultAppOptions.servers.turns[index].url,
@@ -242,7 +238,7 @@ export const joinUrl = createMemo(() => {
     ) {
       url.searchParams.append(
         "turn",
-        JSON.stringify(appOptions.servers.turns),
+        JSON.stringify(appState.options.servers.turns),
       );
     }
   }
@@ -260,7 +256,7 @@ export const joinUrl = createMemo(() => {
 export function JoinRoomButton(
   props: ComponentProps<"button">,
 ) {
-  const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
+  const { joinRoom, leaveRoom } = useWebRTC();
   const { open, Component } = createRoomDialog();
   const [local, other] = splitProps(props, ["class"]);
   return (
@@ -268,7 +264,7 @@ export function JoinRoomButton(
       <Component />
       <Show
         when={
-          sessionService.clientServiceStatus() ===
+          appState.session.clientServiceStatus ===
           "disconnected"
         }
         fallback={
@@ -277,7 +273,7 @@ export function JoinRoomButton(
               as={Button}
               class={local.class}
               disabled={
-                sessionService.clientServiceStatus() !==
+                appState.session.clientServiceStatus !==
                 "connected"
               }
               onClick={() => leaveRoom()}
@@ -286,7 +282,7 @@ export function JoinRoomButton(
             >
               <Show
                 when={
-                  sessionService.clientServiceStatus() ===
+                  appState.session.clientServiceStatus ===
                   "connecting"
                 }
                 fallback={<IconLogout class="size-6" />}
@@ -306,7 +302,7 @@ export function JoinRoomButton(
             class={local.class}
             size="icon"
             disabled={
-              sessionService.clientServiceStatus() !==
+              appState.session.clientServiceStatus !==
               "disconnected"
             }
             onClick={async () => {

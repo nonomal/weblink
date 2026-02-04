@@ -8,8 +8,8 @@ import {
 } from "../utils/event-emitter";
 import { SessionMessage } from "./message";
 import { waitChannel } from "./utils/channel";
-import { appOptions } from "@/options";
 import { catchErrorAsync, catchErrorSync } from "../catch";
+import { appState } from "@/libs/state/app-state";
 
 export interface PeerSessionOptions {
   polite?: boolean;
@@ -139,11 +139,11 @@ export class PeerSession {
 
     applyForKind(
       "video",
-      appOptions.preferredVideoCodec ?? "",
+      appState.options.preferredVideoCodec ?? "",
     );
     applyForKind(
       "audio",
-      appOptions.preferredAudioCodec ?? "",
+      appState.options.preferredAudioCodec ?? "",
     );
   }
   constructor(
@@ -902,7 +902,7 @@ export class PeerSession {
     const channel = this.peerConnection.createDataChannel(
       label,
       {
-        ordered: appOptions.ordered,
+        ordered: appState.options.ordered,
         protocol,
       },
     );
@@ -962,7 +962,7 @@ export class PeerSession {
     channel.addEventListener(
       "error",
       (ev) => {
-        console.error(ev.error);
+        console.error(ev);
       },
       { signal: this.controller?.signal },
     );

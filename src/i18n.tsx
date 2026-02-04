@@ -12,11 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  appOptions,
   Locale,
   localeOptionsMap,
   setAppOptions,
 } from "./options";
+import { appState } from "@/libs/state/app-state";
 
 import en from "@/assets/i18n/en-us.json";
 
@@ -34,7 +34,7 @@ async function importDictionary(locale: Locale) {
 }
 
 const [dict] = createResource(
-  () => appOptions.locale,
+  () => appState.options.locale,
   importDictionary,
 );
 
@@ -59,7 +59,7 @@ const t = (path: string, ...args: any[]): string =>
 const LocaleSelector = () => {
   return (
     <Select
-      value={appOptions.locale}
+      value={appState.options.locale}
       onChange={(value) => {
         if (value) setAppOptions("locale", value as Locale);
       }}

@@ -36,13 +36,13 @@ import {
   IconVideoFileFilled,
 } from "@/components/icons";
 
-import { sessionService } from "@/libs/services/session-service";
 import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { getInitials } from "@/libs/utils/name";
 import { ConnectionBadge } from "../../../components/common/connection-badge";
 import { IconFile } from "@/components/icon-file";
+import { appState } from "@/libs/state/app-state";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {
@@ -87,7 +87,7 @@ export const UserItem: Component<UserItemProps> = (
 
   const clientInfo = createMemo<ClientInfo | undefined>(
     () =>
-      sessionService.clientViewData[local.client.clientId],
+      appState.session.clientViewData[local.client.clientId],
   );
 
   const {

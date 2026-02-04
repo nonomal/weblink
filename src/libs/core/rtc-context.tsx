@@ -8,7 +8,7 @@ import {
   useContext,
 } from "solid-js";
 import { ClientID, FileID, RoomStatus } from "./type";
-import { createStore } from "solid-js/store";
+import type { SetStoreFunction } from "solid-js/store";
 import { PeerSession } from "./session";
 import {
   TRANSFER_CHANNEL_PREFIX,
@@ -19,6 +19,7 @@ import { clientProfile } from "./store";
 import { cacheManager } from "../services/cache-serivce";
 import { transferManager } from "../services/transfer-service";
 import { getRangesLength } from "../utils/range";
+import { appState, setAppState } from "@/libs/state/app-state";
 import {
   ClientService,
   ClientServiceInitOptions,
@@ -38,7 +39,6 @@ import {
   StorageMessage,
 } from "./message";
 import { sessionService } from "../services/session-service";
-import { appOptions } from "@/options";
 import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
 import { catchErrorAsync } from "../catch";
@@ -53,7 +53,7 @@ async function getClientService(
       ).then((m) => new m.FirebaseClientService(options));
     case "WEBSOCKET":
       options.websocketUrl =
-        appOptions.websocketUrl ??
+        appState.options.websocketUrl ??
         import.meta.env.VITE_WEBSOCKET_URL;
       return import(
         "./services/client/ws-client-service"
@@ -141,11 +141,10 @@ export const WebRTCProvider: Component<
     });
   });
 
-  const [roomStatus, setRoomStatus] =
-    createStore<RoomStatus>({
-      roomId: null,
-      profile: null,
-    });
+  const roomStatus = appState.roomStatus;
+  const setRoomStatus: SetStoreFunction<RoomStatus> =
+    ((...args: any[]) =>
+      (setAppState as any)("roomStatus", ...args)) as any;
 
   async function handleReceiveMessage(
     session: PeerSession,
@@ -313,7 +312,7 @@ export const WebRTCProvider: Component<
             await transferer.initialize();
             for (
               let i = 0;
-              i < appOptions.channelsNumber;
+              i < appState.options.channelsNumber;
               i++
             ) {
               const [err, channel] = await catchErrorAsync(
@@ -358,7 +357,7 @@ export const WebRTCProvider: Component<
 
             for (
               let i = 0;
-              i < appOptions.channelsNumber;
+              i < appState.options.channelsNumber;
               i++
             ) {
               const [err, channel] = await catchErrorAsync(
@@ -604,7 +603,7 @@ export const WebRTCProvider: Component<
         mimeType: file.type,
         lastModified: file.lastModified,
         createdAt: Date.now(),
-        chunkSize: appOptions.chunkSize,
+        chunkSize: appState.options.chunkSize,
       } satisfies SendFileMessage;
 
       const cache = await cacheManager.createCache(
@@ -662,7 +661,7 @@ export const WebRTCProvider: Component<
       mimeType: info.mimetype,
       lastModified: info.lastModified,
       createdAt: Date.now(),
-      chunkSize: appOptions.chunkSize,
+      chunkSize: appState.options.chunkSize,
     } satisfies SendFileMessage;
     messageStores.setSendMessage(message);
     session.sendMessage(message);
@@ -731,7 +730,8 @@ export const WebRTCProvider: Component<
       fileSize: info.fileSize,
       mimeType: info.mimetype,
       lastModified: info.lastModified,
-      chunkSize: info.chunkSize ?? appOptions.chunkSize,
+      chunkSize:
+        info.chunkSize ?? appState.options.chunkSize,
       createdAt: Date.now(),
       resume,
     } satisfies RequestFileMessage;

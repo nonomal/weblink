@@ -1,18 +1,12 @@
-import { makePersisted } from "@solid-primitives/storage";
-import { createStore } from "solid-js/store";
 import { faker } from "@faker-js/faker";
-import { Client } from "./type";
 import { v4 } from "uuid";
 import { generateHMAC } from "./utils/encrypt/hmac";
-import { appOptions, TurnServerOptions } from "@/options";
+import type { TurnServerOptions } from "@/options";
 import { catchErrorAsync } from "../catch";
-
-export interface ClientProfile extends Client {
-  roomId: string;
-  password: string | null;
-  autoJoin: boolean;
-  initalJoin: boolean;
-}
+import { appState, setAppState } from "@/libs/state/app-state";
+import type { SetStoreFunction } from "solid-js/store";
+import { createEffect } from "solid-js";
+import type { ClientProfile } from "./profile";
 
 /**
  * parse turn server options to RTCIceServer
@@ -83,14 +77,14 @@ export async function parseTurnServer(
 
 export async function getIceServers() {
   const servers: RTCIceServer[] = [];
-  for (const stun of appOptions.servers.stuns) {
+  for (const stun of appState.options.servers.stuns) {
     if (stun.trim().length === 0) continue;
     servers.push({
       urls: stun,
     });
   }
-  if (appOptions.servers.turns)
-    for (const turn of appOptions.servers.turns) {
+  if (appState.options.servers.turns)
+    for (const turn of appState.options.servers.turns) {
       const [error, server] = await catchErrorAsync(
         parseTurnServer(turn),
       );
@@ -122,19 +116,43 @@ export const getDefaultProfile = () => {
   };
 };
 
-export const [clientProfile, setClientProfile] =
-  makePersisted(
-    createStore<ClientProfile>(getDefaultProfile()),
-    {
-      name: "profile",
-      storage: localStorage,
-    },
-  );
+let profileInitialized = false;
 
-export const [clients, setClients] = makePersisted(
-  createStore<Record<string, Client>>({}),
-  {
-    storage: localStorage,
-    name: "clients",
-  },
-);
+export function initializeProfile() {
+  if (profileInitialized) return;
+  profileInitialized = true;
+
+  if (typeof localStorage !== "undefined") {
+    const raw = localStorage.getItem("profile");
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as ClientProfile;
+        setAppState("profile", parsed);
+      } catch (err) {
+        console.warn(
+          "[initializeProfile] invalid profile in localStorage",
+          err,
+        );
+        setAppState("profile", getDefaultProfile());
+      }
+    } else {
+      setAppState("profile", getDefaultProfile());
+    }
+  } else {
+    setAppState("profile", getDefaultProfile());
+  }
+
+  createEffect(() => {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(
+      "profile",
+      JSON.stringify(appState.profile),
+    );
+  });
+}
+
+export const clientProfile = appState.profile;
+
+export const setClientProfile: SetStoreFunction<ClientProfile> =
+  ((...args: any[]) =>
+    (setAppState as any)("profile", ...args)) as any;

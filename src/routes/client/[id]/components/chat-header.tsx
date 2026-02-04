@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/avatar";
 import { messageStores } from "@/libs/core/message";
 import { getInitials } from "@/libs/utils/name";
-import { sessionService } from "@/libs/services/session-service";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -34,7 +33,7 @@ import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete
 import { t } from "@/i18n";
 import { ConnectionBadge } from "@/components/common/connection-badge";
 import { toast } from "solid-sonner";
-import { appOptions, setAppOptions } from "@/options";
+import { setAppOptions } from "@/options";
 import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
 import clientInfoDialog from "./chat-client-info";
 import { ClientInfo, Client } from "@/libs/core/type";
@@ -44,6 +43,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
+import { appState } from "@/libs/state/app-state";
 
 export const ChatHeader: Component<{
   info?: ClientInfo;
@@ -136,7 +136,7 @@ export const ChatHeader: Component<{
                       when={
                         props.info?.onlineStatus ===
                           "offline" &&
-                        sessionService.clientServiceStatus() ===
+                        appState.session.clientServiceStatus ===
                           "connected"
                       }
                     >
@@ -144,7 +144,7 @@ export const ChatHeader: Component<{
                         class="gap-2"
                         onSelect={async () => {
                           const session =
-                            sessionService.sessions[
+                            appState.session.sessions[
                               props.client.clientId
                             ];
                           if (!session) return;
@@ -199,7 +199,7 @@ export const ChatHeader: Component<{
                       <DropdownMenuCheckboxItem
                         class="gap-2"
                         checked={
-                          appOptions.redirectToClient ===
+                          appState.options.redirectToClient ===
                           props.client.clientId
                         }
                         onChange={(checked) => {

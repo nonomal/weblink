@@ -12,7 +12,6 @@ import {
   SwitchThumb,
 } from "@/components/ui/switch";
 import {
-  clientProfile,
   parseTurnServer,
   setClientProfile,
 } from "@/libs/core/store";
@@ -36,7 +35,6 @@ import { reconcile } from "solid-js/store";
 import { LocaleSelector, t } from "@/i18n";
 import {
   TurnServerOptions,
-  appOptions,
   setAppOptions,
   CompressionLevel,
   getDefaultAppOptions,
@@ -79,6 +77,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createAsync } from "@solidjs/router";
+import { appState } from "@/libs/state/app-state";
 
 export default function Settings() {
   const { open, Component: AboutDialogComponent } =
@@ -156,7 +155,9 @@ export default function Settings() {
   });
 
   const turnServersValue = createMemo(() => {
-    return stringifyTurnServers(appOptions.servers.turns);
+    return stringifyTurnServers(
+      appState.options.servers.turns,
+    );
   });
 
   const [websocketChecking, setWebsocketChecking] =
@@ -167,11 +168,11 @@ export default function Settings() {
     // change ws:// or wss:// to http:// or https://
     let message = "";
     try {
-      const ws = new WebSocket(appOptions.websocketUrl!);
+      const ws = new WebSocket(appState.options.websocketUrl!);
       message = await new Promise((resolve, reject) => {
         ws.onopen = () =>
           resolve(
-            `${appOptions.websocketUrl} is available`,
+            `${appState.options.websocketUrl} is available`,
           );
         ws.onerror = () => reject(new Error("failed"));
       });
@@ -383,13 +384,13 @@ export default function Settings() {
             step={0.01}
             disabled={!backgroundImage()}
             defaultValue={[
-              1 - appOptions.backgroundImageOpacity,
+              1 - appState.options.backgroundImageOpacity,
             ]}
             class="gap-2"
             getValueLabel={({ values }) =>
               `${(values[0] * 100).toFixed(0)}%`
             }
-            value={[1 - appOptions.backgroundImageOpacity]}
+            value={[1 - appState.options.backgroundImageOpacity]}
             onChange={(value) => {
               setAppOptions(
                 "backgroundImageOpacity",
@@ -415,7 +416,7 @@ export default function Settings() {
           <div class="flex flex-col gap-2">
             <Switch
               class="flex items-center justify-between"
-              checked={appOptions.wakeLock}
+              checked={appState.options.wakeLock}
               onChange={(isChecked) =>
                 setAppOptions("wakeLock", isChecked)
               }
@@ -440,9 +441,9 @@ export default function Settings() {
 
           <div class="flex flex-col gap-2">
             <Switch
-              disabled={clientProfile.initalJoin}
+              disabled={appState.profile.initalJoin}
               class="flex items-center justify-between"
-              checked={clientProfile.autoJoin}
+              checked={appState.profile.autoJoin}
               onChange={(isChecked) =>
                 setClientProfile("autoJoin", isChecked)
               }
@@ -470,13 +471,13 @@ export default function Settings() {
               ref={(ref) => {
                 createEffect(() => {
                   textareaAutoResize(ref, () =>
-                    appOptions.servers.stuns.toString(),
+                    appState.options.servers.stuns.toString(),
                   );
                 });
               }}
               value={
-                appOptions.servers.stuns.join("\n") +
-                (appOptions.servers.stuns ? "\n" : "")
+                appState.options.servers.stuns.join("\n") +
+                (appState.options.servers.stuns ? "\n" : "")
               }
               onChange={(ev) => {
                 const value = ev.currentTarget.value
@@ -496,7 +497,7 @@ export default function Settings() {
                 when={
                   import.meta.env.VITE_STUN_SERVERS &&
                   import.meta.env.VITE_STUN_SERVERS !==
-                    appOptions.servers.stuns.join(",")
+                    appState.options.servers.stuns.join(",")
                 }
               >
                 <Button
@@ -514,8 +515,8 @@ export default function Settings() {
               </Show>
               <Show
                 when={
-                  appOptions.servers.stuns.length > 0 &&
-                  appOptions.servers.stuns
+                  appState.options.servers.stuns.length > 0 &&
+                  appState.options.servers.stuns
                 }
               >
                 {(stuns) => {
@@ -609,7 +610,7 @@ export default function Settings() {
                   textareaAutoResize(
                     ref,
                     () =>
-                      appOptions.servers.turns?.toString() ??
+                      appState.options.servers.turns?.toString() ??
                       "",
                   );
                 });
@@ -669,8 +670,8 @@ export default function Settings() {
               </Show>
               <Show
                 when={
-                  appOptions.servers.turns.length > 0 &&
-                  appOptions.servers.turns
+                  appState.options.servers.turns.length > 0 &&
+                  appState.options.servers.turns
                 }
               >
                 {(turns) => {
@@ -774,7 +775,7 @@ export default function Settings() {
           <div class="flex flex-col gap-2">
             <Switch
               class="flex items-center justify-between"
-              checked={appOptions.shareServersWithOthers}
+              checked={appState.options.shareServersWithOthers}
               onChange={(isChecked) =>
                 setAppOptions(
                   "shareServersWithOthers",
@@ -809,7 +810,7 @@ export default function Settings() {
                 )}
               </Label>
               <Input
-                value={appOptions.websocketUrl ?? ""}
+                value={appState.options.websocketUrl ?? ""}
                 onInput={(ev) => {
                   setAppOptions(
                     "websocketUrl",
@@ -826,7 +827,7 @@ export default function Settings() {
               <div class="flex gap-2 self-end">
                 <Show
                   when={
-                    appOptions.websocketUrl !==
+                    appState.options.websocketUrl !==
                     defaultWebsocketUrl
                   }
                 >
@@ -861,7 +862,7 @@ export default function Settings() {
             <Switch
               disabled={!navigator.clipboard}
               class="flex items-center justify-between"
-              checked={appOptions.enableClipboard}
+              checked={appState.options.enableClipboard}
               onChange={(isChecked) =>
                 setAppOptions("enableClipboard", isChecked)
               }
@@ -889,7 +890,7 @@ export default function Settings() {
           <div class="flex flex-col gap-2">
             <Switch
               class="flex items-center justify-between"
-              checked={appOptions.automaticCacheDeletion}
+              checked={appState.options.automaticCacheDeletion}
               onChange={(isChecked) =>
                 setAppOptions(
                   "automaticCacheDeletion",
@@ -917,7 +918,7 @@ export default function Settings() {
               minValue={0}
               maxValue={9}
               step={1}
-              defaultValue={[appOptions.compressionLevel]}
+              defaultValue={[appState.options.compressionLevel]}
               getValueLabel={({ values }) =>
                 values[0] === 0
                   ? t(
@@ -960,7 +961,7 @@ export default function Settings() {
           <div class="flex flex-col gap-2">
             <Switch
               class="flex items-center justify-between"
-              checked={appOptions.automaticDownload}
+              checked={appState.options.automaticDownload}
               onChange={(isChecked) =>
                 setAppOptions(
                   "automaticDownload",
@@ -1010,9 +1011,9 @@ export default function Settings() {
               <div class="flex flex-col gap-2">
                 <Switch
                   class="flex items-center justify-between"
-                  checked={appOptions.relayOnly}
+                  checked={appState.options.relayOnly}
                   disabled={
-                    appOptions.servers.turns.length === 0
+                    appState.options.servers.turns.length === 0
                   }
                   onChange={(isChecked) =>
                     setAppOptions("relayOnly", isChecked)
@@ -1042,7 +1043,7 @@ export default function Settings() {
                 <Slider
                   minValue={1}
                   maxValue={8}
-                  defaultValue={[appOptions.channelsNumber]}
+                  defaultValue={[appState.options.channelsNumber]}
                   class="gap-2"
                   onChange={(value) => {
                     setAppOptions(
@@ -1074,12 +1075,12 @@ export default function Settings() {
 
               <Slider
                 minValue={Math.max(
-                  appOptions.blockSize,
+                  appState.options.blockSize,
                   128 * 1024,
                 )}
                 maxValue={10 * 1024 * 1024}
                 step={128 * 1024}
-                defaultValue={[appOptions.chunkSize]}
+                defaultValue={[appState.options.chunkSize]}
                 class="gap-2"
                 getValueLabel={({ values }) =>
                   formatBtyeSize(values[0], 2)
@@ -1104,7 +1105,7 @@ export default function Settings() {
                 minValue={16 * 1024}
                 maxValue={192 * 1024}
                 step={16 * 1024}
-                defaultValue={[appOptions.blockSize]}
+                defaultValue={[appState.options.blockSize]}
                 class="gap-2"
                 getValueLabel={({ values }) =>
                   formatBtyeSize(values[0], 0)
@@ -1130,7 +1131,7 @@ export default function Settings() {
                 maxValue={1024 * 1024}
                 step={1024}
                 defaultValue={[
-                  appOptions.bufferedAmountLowThreshold,
+                  appState.options.bufferedAmountLowThreshold,
                 ]}
                 getValueLabel={({ values }) =>
                   formatBtyeSize(values[0], 2)
@@ -1161,7 +1162,7 @@ export default function Settings() {
               <div class="flex flex-col gap-2">
                 <Switch
                   class="flex items-center justify-between"
-                  checked={appOptions.ordered}
+                  checked={appState.options.ordered}
                   onChange={(isChecked) =>
                     setAppOptions("ordered", isChecked)
                   }
@@ -1188,10 +1189,10 @@ export default function Settings() {
                   maxValue={128}
                   step={1}
                   defaultValue={[
-                    appOptions.maxMomeryCacheSlices,
+                    appState.options.maxMomeryCacheSlices,
                   ]}
                   getValueLabel={({ values }) =>
-                    `${values[0]} (${formatBtyeSize(values[0] * appOptions.chunkSize, 0)})`
+                    `${values[0]} (${formatBtyeSize(values[0] * appState.options.chunkSize, 0)})`
                   }
                   class="gap-2"
                   onChange={(value) => {
@@ -1232,7 +1233,7 @@ export default function Settings() {
                   maxValue={150 * 1024 * 1024}
                   step={128 * 1024}
                   defaultValue={[
-                    appOptions.videoMaxBitrate,
+                    appState.options.videoMaxBitrate,
                   ]}
                   getValueLabel={({ values }) =>
                     `${formatBitSize(values[0], 0)}ps`
@@ -1272,7 +1273,7 @@ export default function Settings() {
                   )}
                 </Label>
                 <Select
-                  value={appOptions.degradationPreference}
+                  value={appState.options.degradationPreference}
                   onChange={(value) => {
                     setAppOptions(
                       "degradationPreference",
@@ -1311,7 +1312,7 @@ export default function Settings() {
                 </Label>
                 <Select
                   value={
-                    appOptions.preferredVideoCodec ?? "auto"
+                    appState.options.preferredVideoCodec ?? "auto"
                   }
                   disabled={!canGetRtpCapabilities()}
                   onChange={(value) => {
@@ -1358,7 +1359,7 @@ export default function Settings() {
                 </Label>
                 <Select
                   value={
-                    appOptions.preferredAudioCodec ?? "auto"
+                    appState.options.preferredAudioCodec ?? "auto"
                   }
                   disabled={!canGetRtpCapabilities()}
                   onChange={(value) => {

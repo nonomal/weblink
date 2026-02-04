@@ -174,7 +174,7 @@ export async function encryptData(
 
     // derive key
     const keyMaterial = await getKeyMaterial(password);
-    const key = await deriveKey(keyMaterial, salt);
+    const key = await deriveKey(keyMaterial, salt.buffer);
 
     // encrypt data
     const encoder = new TextEncoder();
@@ -237,7 +237,7 @@ export async function decryptData(
 
     // derive key
     const keyMaterial = await getKeyMaterial(password);
-    const key = await deriveKey(keyMaterial, salt);
+    const key = await deriveKey(keyMaterial, salt.buffer);
 
     // decrypt
     const decryptedData = await crypto.subtle.decrypt(
@@ -299,10 +299,10 @@ async function getKeyMaterial(
 // helper function: derive key
 async function deriveKey(
   keyMaterial: CryptoKey,
-  salt: Uint8Array,
+  salt: ArrayBuffer,
 ): Promise<CryptoKey> {
   if (isCryptoSubtleAvailable) {
-    return crypto.subtle.deriveKey(
+    return window.crypto.subtle.deriveKey(
       {
         name: "PBKDF2",
         salt: salt,

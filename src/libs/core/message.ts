@@ -1,5 +1,4 @@
 import {
-  createStore,
   produce,
   reconcile,
   SetStoreFunction,
@@ -12,8 +11,9 @@ import {
   TransferMode,
 } from "./file-transferer";
 import { ChunkCache } from "../cache/chunk-cache";
-import { Accessor, createSignal, Setter } from "solid-js";
+import type { Accessor } from "solid-js";
 import { ChunkMetaData } from "../cache";
+import { appState, setAppState } from "@/libs/state/app-state";
 
 export type MessageID = string;
 
@@ -139,31 +139,28 @@ export type SessionMessage =
   | ResumeFileMessage;
 
 class MessageStores {
-  readonly messages: StoreMessage[];
-  readonly clients: Client[];
+  readonly messages: StoreMessage[] = appState.message.messages;
+  readonly clients: Client[] = appState.message.clients;
   readonly db: Promise<IDBDatabase> | IDBDatabase;
-  private setMessages: SetStoreFunction<StoreMessage[]>;
-  private setClients: SetStoreFunction<Client[]>;
-  status: Accessor<"initializing" | "ready">;
-  private setStatus: Setter<"initializing" | "ready">;
+  private setMessages: SetStoreFunction<StoreMessage[]> =
+    ((...args: any[]) =>
+      (setAppState as any)(
+        "message",
+        "messages",
+        ...args,
+      )) as any;
+  private setClients: SetStoreFunction<Client[]> =
+    ((...args: any[]) =>
+      (setAppState as any)(
+        "message",
+        "clients",
+        ...args,
+      )) as any;
+  status: Accessor<"initializing" | "ready"> = () =>
+    appState.message.status;
   private controllers: Record<FileID, AbortController> = {};
   constructor() {
-    const [messages, setMessages] = createStore<
-      StoreMessage[]
-    >([]);
-    this.messages = messages;
-    this.setMessages = setMessages;
-
-    const [clients, setClients] = createStore<Client[]>([]);
-    this.clients = clients;
-    this.setClients = setClients;
-
     this.db = this.initDB();
-    const [status, setStatus] = createSignal<
-      "initializing" | "ready"
-    >("initializing");
-    this.status = status;
-    this.setStatus = setStatus;
   }
 
   private timeouts: Record<MessageID, number> = {};
@@ -265,7 +262,7 @@ class MessageStores {
     });
 
     return Promise.all([promise1, promise2]).then(() => {
-      this.setStatus("ready");
+      setAppState("message", "status", "ready");
     });
   }
 
@@ -743,4 +740,11 @@ class MessageStores {
   }
 }
 
-export const messageStores = new MessageStores();
+export let messageStores: MessageStores;
+
+export function createMessageStores() {
+  if (!messageStores) {
+    messageStores = new MessageStores();
+  }
+  return messageStores;
+}
