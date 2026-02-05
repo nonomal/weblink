@@ -30,6 +30,7 @@ export type AppState = {
     sessions: Record<ClientID, PeerSession>;
     clientViewData: Record<ClientID, ClientInfo>;
     clientServiceStatus: ClientServiceStatus;
+    localStream: MediaStream | null;
   };
   cache: {
     status: CacheStatus;
@@ -65,6 +66,7 @@ export const createInitialAppState = (): AppState => ({
     sessions: {},
     clientViewData: {},
     clientServiceStatus: "disconnected",
+    localStream: null,
   },
   cache: {
     status: "loading",

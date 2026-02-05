@@ -15,9 +15,10 @@ import {
 import {
   createTransferManager,
 } from "@/libs/services/transfer-service";
+import { createRtcService } from "@/libs/services/rtc-service";
+import { createRtcProtocol } from "@/libs/services/rtc-protocol";
 import {
   createMessageStores,
-  messageStores,
 } from "@/libs/core/message";
 
 let initPromise: Promise<void> | null = null;
@@ -54,5 +55,11 @@ export const services = {
   },
   get messageStores() {
     return createMessageStores();
+  },
+  get rtcService() {
+    return createRtcService();
+  },
+  get rtcProtocol() {
+    return createRtcProtocol();
   },
 };

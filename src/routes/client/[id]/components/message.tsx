@@ -1,5 +1,5 @@
 import "photoswipe/style.css";
-import { useWebRTC } from "@/libs/core/rtc-context";
+import { useAppState } from "@/libs/state/app-state-context";
 import {
   Component,
   ComponentProps,
@@ -33,10 +33,6 @@ import {
 import { convertImageToPNG } from "@/libs/utils/conver-to-png";
 import {
   FileTransferMessage,
-  messageStores,
-  SendFileMessage,
-  SendTextMessage,
-  SessionMessage,
   StoreMessage,
   TextMessage,
 } from "@/libs/core/message";
@@ -118,7 +114,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
   props,
 ) => {
   const { requestFile, resumeFile, pauseFile } =
-    useWebRTC();
+    useAppState();
 
   const transferer = createMemo<FileTransferer | null>(
     () => {
@@ -529,9 +525,7 @@ export const MessageContent: Component<MessageCardProps> = (
     () =>
       appState.session.clientViewData[local.message.target],
   );
-  const session = createMemo(
-    () => appState.session.sessions[local.message.target],
-  );
+  const { retryMessage } = useAppState();
   const {
     open: openPreviewDialog,
     Component: PreviewDialogComponent,
@@ -890,42 +884,7 @@ export const MessageContent: Component<MessageCardProps> = (
                 size="icon"
                 variant="outline"
                 onClick={() => {
-                  let sessionMessage:
-                    | SessionMessage
-                    | undefined;
-
-                  if (props.message.type === "text") {
-                    sessionMessage = {
-                      id: props.message.id,
-                      type: "send-text",
-                      client: props.message.client,
-                      target: props.message.target,
-                      data: props.message.data,
-                      createdAt: props.message.createdAt,
-                    } satisfies SendTextMessage;
-                  } else if (
-                    props.message.type === "file"
-                  ) {
-                    if (!props.message.fid) return;
-                    sessionMessage = {
-                      id: props.message.id,
-                      type: "send-file",
-                      client: props.message.client,
-                      target: props.message.target,
-                      fid: props.message.fid,
-                      fileName: props.message.fileName,
-                      mimeType: props.message.mimeType,
-                      chunkSize: props.message.chunkSize,
-                      createdAt: props.message.createdAt,
-                      fileSize: props.message.fileSize,
-                    } satisfies SendFileMessage;
-                  }
-                  if (!sessionMessage) return;
-
-                  messageStores.setReceiveMessage(
-                    sessionMessage,
-                  );
-                  session().sendMessage(sessionMessage);
+                  void retryMessage(props.message);
                 }}
               >
                 <IconRestartAlt class="size-6" />

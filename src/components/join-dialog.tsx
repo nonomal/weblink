@@ -3,7 +3,7 @@ import { createDialog } from "./dialogs/dialog";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { optional } from "@/libs/core/utils/optional";
-import { useWebRTC } from "@/libs/core/rtc-context";
+import { useAppState } from "@/libs/state/app-state-context";
 import {
   ComponentProps,
   createMemo,
@@ -247,7 +247,7 @@ export const joinUrl = createMemo(() => {
 });
 
 // const createRoomStatus = () => {
-//   const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
+//   const { joinRoom, roomStatus, leaveRoom } = useAppState();
 //   const [joinStatus, setJoinStatus] = createSignal<
 //     "connecting" | "connected" | "disconnected"
 //   >("disconnected");
@@ -256,7 +256,7 @@ export const joinUrl = createMemo(() => {
 export function JoinRoomButton(
   props: ComponentProps<"button">,
 ) {
-  const { joinRoom, leaveRoom } = useWebRTC();
+  const { joinRoom, leaveRoom } = useAppState();
   const { open, Component } = createRoomDialog();
   const [local, other] = splitProps(props, ["class"]);
   return (

@@ -1,4 +1,4 @@
-import { useWebRTC } from "@/libs/core/rtc-context";
+import { useAppState } from "@/libs/state/app-state-context";
 import {
   Component,
   ComponentProps,
@@ -40,7 +40,7 @@ export const ChatBar: Component<
     "client",
     "class",
   ]);
-  const { sendText, sendFile } = useWebRTC();
+  const { sendText, sendFile } = useAppState();
   const [text, setText] = createSignal("");
 
   const { open: openPreview, Component: PreviewDialog } =

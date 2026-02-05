@@ -42,15 +42,14 @@ import {
   ChunkMetaData,
 } from "@/libs/cache";
 import { cn } from "@/libs/cn";
-import { useWebRTC } from "@/libs/core/rtc-context";
+import { useAppState } from "@/libs/state/app-state-context";
 import { ClientInfo, Client } from "@/libs/core/type";
-import { sessionService } from "@/libs/services/session-service";
 import { downloadFile } from "@/libs/utils/download-file";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { getInitials } from "@/libs/utils/name";
 import { ConnectionBadge } from "@/components/common/connection-badge";
 import { makePersisted } from "@solid-primitives/storage";
-import { A, RouteSectionProps } from "@solidjs/router";
+import { A, RouteSectionProps, useParams } from "@solidjs/router";
 import {
   createColumnHelper,
   createSolidTable,
@@ -76,7 +75,6 @@ import {
   For,
   Show,
 } from "solid-js";
-import { v4 } from "uuid";
 import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dialog";
 import { FileTransferer } from "@/libs/core/file-transferer";
 import {
@@ -98,7 +96,8 @@ type ChunkStatus =
   | "complete";
 
 const Sync = (props: RouteSectionProps) => {
-  const { requestFile } = useWebRTC();
+  const { requestFile, requestStorage } = useAppState();
+  const params = useParams<{ id: string }>();
 
   const columnHelper = createColumnHelper<ChunkMetaData>();
 
@@ -285,7 +284,7 @@ const Sync = (props: RouteSectionProps) => {
                             row.original,
                           );
                           requestFile(
-                            props.params.id,
+                            params.id,
                             row.original,
                             false,
                           );
@@ -392,7 +391,7 @@ const Sync = (props: RouteSectionProps) => {
                             class="gap-2"
                             onSelect={() => {
                               requestFile(
-                                props.params.id,
+                                params.id,
                                 row.original,
                                 true,
                               );
@@ -502,30 +501,24 @@ const Sync = (props: RouteSectionProps) => {
   );
 
   const session = createMemo(
-    () => appState.session.sessions[props.params.id],
+    () => appState.session.sessions[params.id],
   );
 
   const client = createMemo<Client | undefined>(() =>
     appState.message.clients.find(
-      (c) => c.clientId === props.params.id,
+      (c) => c.clientId === params.id,
     ),
   );
 
   const clientInfo = createMemo<ClientInfo | undefined>(
-    () => appState.session.clientViewData[props.params.id],
+    () => appState.session.clientViewData[params.id],
   );
 
   createEffect(() => {
     const s = session();
     if (!s) return;
     if (clientInfo()?.messageChannel) {
-      s.sendMessage({
-        id: v4(),
-        type: "request-storage",
-        createdAt: Date.now(),
-        client: s.clientId,
-        target: s.targetClientId,
-      });
+      void requestStorage(params.id);
     }
   });
 
@@ -618,9 +611,7 @@ const Sync = (props: RouteSectionProps) => {
                 disabled={!clientInfo()?.messageChannel}
                 aria-label={t("client.sync.menu.refresh")}
                 onClick={() => {
-                  sessionService.requestStorage(
-                    props.params.id,
-                  );
+                  void requestStorage(params.id);
                 }}
                 variant="outline"
                 size="icon"
@@ -761,7 +752,7 @@ const Sync = (props: RouteSectionProps) => {
                         const resume =
                           status() === "stopped";
                         requestFile(
-                          props.params.id,
+                          params.id,
                           row.original,
                           resume,
                         );

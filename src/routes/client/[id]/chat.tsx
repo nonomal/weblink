@@ -1,8 +1,9 @@
 import {
   RouteSectionProps,
   useNavigate,
+  useParams,
 } from "@solidjs/router";
-import { useWebRTC } from "@/libs/core/rtc-context";
+import { useAppState } from "@/libs/state/app-state-context";
 import {
   createEffect,
   createMemo,
@@ -24,11 +25,7 @@ import { createElementSize } from "@solid-primitives/resize-observer";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 // @ts-ignore
 import PhotoSwipeVideoPlugin from "photoswipe-video-plugin";
-import {
-  SendClipboardMessage,
-  messageStores,
-  StoreMessage,
-} from "@/libs/core/message";
+import { messageStores, StoreMessage } from "@/libs/core/message";
 import { ChatBar } from "@/routes/client/[id]/components/chat-bar";
 import {
   IconArrowDownward,
@@ -38,7 +35,6 @@ import {
 import { t } from "@/i18n";
 import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
-import { v4 } from "uuid";
 import { handleDropItems } from "@/libs/utils/process-file";
 import { ClientInfo, Client } from "@/libs/core/type";
 import { catchErrorAsync } from "@/libs/catch";
@@ -51,15 +47,16 @@ export default function ClientPage(
   props: RouteSectionProps,
 ) {
   const navigate = useNavigate();
-  const { sendFile } = useWebRTC();
+  const params = useParams<{ id: string }>();
+  const { sendFile, sendClipboard } = useAppState();
   const client = createMemo<Client | null>(
     () =>
       appState.message.clients.find(
-        (client) => client.clientId === props.params.id,
+        (client) => client.clientId === params.id,
       ) ?? null,
   );
   const clientInfo = createMemo<ClientInfo | undefined>(
-    () => appState.session.clientViewData[props.params.id],
+    () => appState.session.clientViewData[params.id],
   );
   createEffect(() => {
     if (appState.message.status === "ready" && !client()) {
@@ -91,8 +88,8 @@ export default function ClientPage(
     () =>
       appState.message.messages.filter(
         (message) =>
-          message.client === props.params.id ||
-          message.target === props.params.id,
+          message.client === params.id ||
+          message.target === params.id,
       ) ?? [],
   );
 
@@ -202,14 +199,7 @@ export default function ClientPage(
       if (item.kind === "string") {
         item.getAsString((data) => {
           if (data) {
-            s.sendMessage({
-              type: "send-clipboard",
-              id: v4(),
-              createdAt: Date.now(),
-              client: s.clientId,
-              target: s.targetClientId,
-              data,
-            } satisfies SendClipboardMessage);
+            void sendClipboard(data, s.targetClientId);
           }
         });
         break;

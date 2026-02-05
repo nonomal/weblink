@@ -13,7 +13,6 @@ import {
   SendClipboardMessage,
   StorageMessage,
 } from "@/libs/core/message";
-import { v4 } from "uuid";
 import { getIceServers } from "@/libs/core/store";
 import { catchErrorAsync, catchErrorSync } from "../catch";
 import { appState, setAppState } from "@/libs/state/app-state";
@@ -114,23 +113,6 @@ export class SessionService {
       target,
       undefined!,
     );
-  }
-
-  requestStorage(client: ClientID) {
-    const session = this.sessions[client];
-    if (!session) {
-      console.warn(
-        `[SessionService] request storage, session ${client} not found`,
-      );
-      return;
-    }
-    session.sendMessage({
-      type: "request-storage",
-      id: v4(),
-      createdAt: Date.now(),
-      client: session.clientId,
-      target: session.targetClientId,
-    });
   }
 
   async addClient(client: TransferClient) {
@@ -429,4 +411,3 @@ function changeVideoEncoding(
   encoding.networkPriority = "high";
   return parameters;
 }
-

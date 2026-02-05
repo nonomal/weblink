@@ -11,13 +11,15 @@ import {
   Show,
 } from "solid-js";
 import { Toaster } from "@/components/ui/sonner";
-import ChatProvider from "./components/chat/chat-provider";
 import Nav from "@/components/app/nav";
 import {
   getRandomAvatar,
   setClientProfile,
 } from "./libs/core/store";
-import { useWebRTC } from "./libs/core/rtc-context";
+import {
+  AppStateProvider,
+  useAppState,
+} from "@/libs/state/app-state-context";
 import {
   JoinRoomButton,
   createRoomDialog,
@@ -72,9 +74,10 @@ import { AudioPlayerProvider } from "./routes/video/components/audio-player";
 import { AppWakeLock } from "./components/app/wakelock";
 import { createInitialization } from "@/libs/initialization";
 import { appState } from "@/libs/state/app-state";
+import { localStream } from "@/libs/stream";
 
 const InnerApp = (props: ParentProps) => {
-  const { joinRoom } = useWebRTC();
+  const { joinRoom } = useAppState();
   const [search, setSearch] = useSearchParams();
 
   const {
@@ -492,11 +495,11 @@ export default function App(props: RouteSectionProps) {
           }`}
         </Style>
         <Toaster />
-        <ChatProvider>
+        <AppStateProvider localStream={localStream()}>
           <AudioPlayerProvider>
             <InnerApp>{props.children}</InnerApp>
           </AudioPlayerProvider>
-        </ChatProvider>
+        </AppStateProvider>
       </MetaProvider>
     </>
   );

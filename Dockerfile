@@ -1,12 +1,11 @@
-FROM node:20-slim AS base
+FROM oven/bun:1 AS base
 
 WORKDIR /app
-RUN npm install -g pnpm
 
 FROM base AS install
 RUN mkdir -p /temp/prod
-COPY package.json pnpm-lock.yaml /temp/prod/
-RUN cd /temp/prod && pnpm install
+COPY package.json bun.lock /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile
 
 FROM base AS build
 COPY --from=install /temp/prod/node_modules node_modules
@@ -16,7 +15,7 @@ ENV VITE_BACKEND=WEBSOCKET
 ARG VITE_WEBSOCKET_URL
 ARG VITE_STUN_SERVERS
 
-RUN pnpm build
+RUN bun run build
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html

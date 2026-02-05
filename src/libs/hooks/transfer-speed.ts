@@ -9,6 +9,7 @@ import {
 type TransferSpeedOptions = {
   sampleInterval?: number;
   windowSize?: number;
+  maxSpeed?: number;
 };
 
 /**
@@ -21,7 +22,11 @@ const createTransferSpeed = (
   transferredSize: Accessor<number>,
   options: TransferSpeedOptions = {},
 ) => {
-  const { sampleInterval = 250, windowSize = 10 } = options;
+  const {
+    sampleInterval = 250,
+    windowSize = 10,
+    maxSpeed = 256 * 1024 * 1024,
+  } = options;
   const [prevTransferred, setPrevTransferred] =
     createSignal<number>(transferredSize());
   const [prevTimestamp, setPrevTimestamp] =
@@ -46,11 +51,26 @@ const createTransferSpeed = (
   const setSample = () => {
     const now = performance.now();
     const timeElapsed = (now - prevTimestamp()) / 1000;
+    const currentTransferred = transferredSize();
     const transferredInLastInterval =
-      transferredSize() - prevTransferred();
-    if (timeElapsed > 0 && transferredInLastInterval >= 0) {
+      currentTransferred - prevTransferred();
+    if (timeElapsed > 0) {
+      if (transferredInLastInterval < 0) {
+        setSpeedSamples([]);
+        setPrevTransferred(currentTransferred);
+        setPrevTimestamp(now);
+        return;
+      }
+
       const currentSpeed =
         transferredInLastInterval / timeElapsed;
+      if (currentSpeed > maxSpeed) {
+        setSpeedSamples([]);
+        setPrevTransferred(currentTransferred);
+        setPrevTimestamp(now);
+        return;
+      }
+
       setSpeedSamples((prevSamples) => {
         const newSamples = [...prevSamples, currentSpeed];
         return newSamples.length > windowSize
@@ -59,7 +79,7 @@ const createTransferSpeed = (
       });
     }
 
-    setPrevTransferred(transferredSize());
+    setPrevTransferred(currentTransferred);
     setPrevTimestamp(now);
   };
 

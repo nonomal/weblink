@@ -138,6 +138,10 @@ export type SessionMessage =
   | RequestStorageMessage
   | ResumeFileMessage;
 
+export type SendMessageOptions = {
+  timeoutMs?: number | null;
+};
+
 class MessageStores {
   readonly messages: StoreMessage[] = appState.message.messages;
   readonly clients: Client[] = appState.message.clients;
@@ -378,7 +382,12 @@ class MessageStores {
     return controller;
   }
 
-  setSendMessage(sessionMsg: SessionMessage) {
+  setSendMessage(
+    sessionMsg: SessionMessage,
+    options: SendMessageOptions = {},
+  ) {
+    const timeoutMs =
+      options.timeoutMs === undefined ? 5000 : options.timeoutMs;
     let index: number = this.messages.findLastIndex(
       (msg) => msg.id === sessionMsg.id,
     );
@@ -386,7 +395,9 @@ class MessageStores {
       this.setMessages(index, "error", undefined);
       this.setMessageDB(this.messages[index]);
 
-      this.setTimeout(message.id, 5000, () => {
+      if (timeoutMs === null) return;
+
+      this.setTimeout(message.id, timeoutMs, () => {
         this.setMessages(index, "status", "error");
         this.setMessages(index, "error", "send timeout");
         this.setMessageDB(this.messages[index]);
@@ -431,6 +442,8 @@ class MessageStores {
           fid: sessionMsg.fid,
           fileName: sessionMsg.fileName,
           fileSize: sessionMsg.fileSize,
+          mimeType: sessionMsg.mimeType,
+          lastModified: sessionMsg.lastModified,
           chunkSize: sessionMsg.chunkSize,
           createdAt: sessionMsg.createdAt,
           client: sessionMsg.target,
@@ -445,6 +458,86 @@ class MessageStores {
           }),
         );
       }
+    }
+  }
+
+  retrySendMessage(
+    sessionMsg: SessionMessage,
+    options: SendMessageOptions = {},
+  ) {
+    const timeoutMs =
+      options.timeoutMs === undefined ? 5000 : options.timeoutMs;
+    const index = this.messages.findLastIndex(
+      (msg) => msg.id === sessionMsg.id,
+    );
+
+    if (index === -1) {
+      this.setSendMessage(sessionMsg, options);
+      return;
+    }
+
+    const resetTimeout = (messageId: MessageID) => {
+      this.clearTimeout(messageId);
+      if (timeoutMs === null) return;
+      this.setTimeout(messageId, timeoutMs, () => {
+        const nextIndex = this.messages.findLastIndex(
+          (msg) => msg.id === messageId,
+        );
+        if (nextIndex === -1) return;
+
+        this.setMessages(nextIndex, "status", "error");
+        this.setMessages(nextIndex, "error", "send timeout");
+        this.setMessageDB(this.messages[nextIndex]);
+      });
+    };
+
+    if (sessionMsg.type === "send-text") {
+      this.setMessages(
+        index,
+        produce((state) => {
+          if (state.type !== "text") return;
+          state.status = "sending";
+          state.error = undefined;
+          state.data = sessionMsg.data;
+          this.setMessageDB(state);
+        }),
+      );
+      resetTimeout(sessionMsg.id);
+    } else if (sessionMsg.type === "send-file") {
+      this.setMessages(
+        index,
+        produce((state) => {
+          if (state.type !== "file") return;
+          state.status = "sending";
+          state.error = undefined;
+          state.fid = sessionMsg.fid;
+          state.fileName = sessionMsg.fileName;
+          state.fileSize = sessionMsg.fileSize;
+          state.mimeType = sessionMsg.mimeType;
+          state.lastModified = sessionMsg.lastModified;
+          state.chunkSize = sessionMsg.chunkSize;
+          this.setMessageDB(state);
+        }),
+      );
+      resetTimeout(sessionMsg.id);
+    } else if (sessionMsg.type === "request-file") {
+      this.setMessages(
+        index,
+        produce((state) => {
+          if (state.type !== "file") return;
+          state.status = "sending";
+          state.error = undefined;
+          state.fid = sessionMsg.fid;
+          state.fileName = sessionMsg.fileName;
+          state.fileSize = sessionMsg.fileSize;
+          state.mimeType = sessionMsg.mimeType;
+          state.lastModified = sessionMsg.lastModified;
+          state.chunkSize = sessionMsg.chunkSize;
+          state.transferStatus = "init";
+          this.setMessageDB(state);
+        }),
+      );
+      resetTimeout(sessionMsg.id);
     }
   }
 
@@ -497,6 +590,8 @@ class MessageStores {
           fid: sessionMsg.fid,
           fileName: sessionMsg.fileName,
           fileSize: sessionMsg.fileSize,
+          mimeType: sessionMsg.mimeType,
+          lastModified: sessionMsg.lastModified,
           chunkSize: sessionMsg.chunkSize,
           createdAt: sessionMsg.createdAt,
           client: sessionMsg.target,

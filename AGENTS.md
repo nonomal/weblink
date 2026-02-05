@@ -4,10 +4,10 @@ This repo is a SolidJS + TypeScript (strict) WebRTC chat / file-transfer app.
 
 ## Quick commands
 
-- Dev: `pnpm dev`
-- Tests: `pnpm test`
-- Build: `pnpm build`
-- Preview: `pnpm preview`
+- Dev: `bun dev`
+- Tests: `bun test`
+- Build: `bun run build`
+- Preview: `bun preview`
 
 ## Code style / conventions
 

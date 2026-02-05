@@ -2,13 +2,14 @@
   "name": "weblink",
   "type": "module",
   "description": "A P2P web chat and file transfer, file synchronization application using WebRTC",
-  "version": "0.11.4",
+  "version": "0.12.0",
   "license": "MIT",
   "author": {
     "name": "99percentpeople",
     "email": "myzzzyearz@outlook.com",
     "url": "https://github.com/99percentpeople"
   },
+  "packageManager": "bun@1.3.8",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",

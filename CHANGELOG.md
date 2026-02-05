@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0] - 2026-02-05
+
+### Refactors
+
+- Refactor file transfer into FileSender/FileReceiver and manage via transfer-service 拆分文件传输为 FileSender/FileReceiver 并由 transfer-service 统一管理
+
+- Replace WebRTCContext with AppStateContext and unify session/message/cache state 用 AppStateContext 替换 WebRTCContext 并统一管理会话/消息/缓存等状态
+
+- Introduce RTC protocol layer (rtc-service + rtc-protocol) with ACK/dedup/timeout and add tests 引入 RTC 协议层（rtc-service + rtc-protocol）实现 ACK/去重/超时，并补充测试
+
+### Improvements
+
+- Outbound messaging now uses protocol request with unified error handling 发送消息统一走协议层 request 并统一错误处理
+
+### Fixes
+
+- Fix resumed transfer initial speed spike on sender side 修复发送端断点续传初始速度异常偏大的问题
+
+### Chores
+
+- Switch package manager to Bun (add bun.lock, remove pnpm-lock) 切换包管理器到 Bun（新增 bun.lock，移除 pnpm-lock）
+
 ## [0.11.4] - 2025-12-30
 
 ### New Features

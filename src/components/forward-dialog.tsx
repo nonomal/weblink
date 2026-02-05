@@ -26,7 +26,7 @@ import {
   CheckboxControl,
 } from "@/components/ui/checkbox";
 import { IconForward, IconDraft } from "./icons";
-import { useWebRTC } from "@/libs/core/rtc-context";
+import { useAppState } from "@/libs/state/app-state-context";
 import { toast } from "solid-sonner";
 import { FileMetaData } from "@/libs/cache";
 import { t } from "@/i18n";
@@ -97,7 +97,7 @@ export const createForwardDialog = () => {
     setShareData(shares);
     setOpen(true);
   };
-  const { sendText, sendFile, shareFile } = useWebRTC();
+  const { sendText, sendFile, shareFile } = useAppState();
   const forwardCache = (
     fileData: FileMetaData | FileMetaData[],
   ) => {

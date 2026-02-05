@@ -1,7 +1,7 @@
 import { Component, Match, Show, Switch } from "solid-js";
 import { t } from "@/i18n";
 import { createRoomDialog } from "@/components/join-dialog";
-import { useWebRTC } from "@/libs/core/rtc-context";
+import { useAppState } from "@/libs/state/app-state-context";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/common/spinner";
 import {
@@ -14,7 +14,7 @@ import { createQRCodeDialog } from "@/components/create-qrcode-dialog";
 import { toast } from "solid-sonner";
 import { appState } from "@/libs/state/app-state";
 const Client: Component = (props) => {
-  const { joinRoom, leaveRoom } = useWebRTC();
+  const { joinRoom, leaveRoom } = useAppState();
   const {
     open: openRoomDialog,
     Component: RoomDialogComponent,
