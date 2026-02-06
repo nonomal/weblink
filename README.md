@@ -37,16 +37,16 @@ More information can be found in [CHANGELOG](CHANGELOG.md).
 ```bash
 git clone https://github.com/99percentpeople/weblink.git
 cd weblink
-pnpm install
+bun install
 ```
 
 Make sure you configure the Firebase keys in the project (as shown below), then run the following command:
 
 ```bash
 # Development
-pnpm dev
+bun dev
 # Build
-pnpm build
+bun build
 ```
 
 ### Deploy to Docker

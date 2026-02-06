@@ -39,16 +39,16 @@ Weblink 目前支持以下功能：
 ```bash
 git clone https://github.com/99percentpeople/weblink.git
 cd weblink
-pnpm install
+bun install
 ```
 
 确保你已经在项目中配置了 Firebase 的密钥（如下所示），然后运行以下命令：
 
 ```bash
 # 进行开发
-pnpm dev
+bun dev
 # 构建
-pnpm build
+bun build
 ```
 
 ### 部署到 Docker
