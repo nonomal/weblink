@@ -34,6 +34,7 @@ const createTransferSpeed = (
   const [speedSamples, setSpeedSamples] = createSignal<
     number[]
   >([]);
+  let ignoreNextPositiveDelta = true;
   let interval: number;
   const averageSpeed = createMemo<number | null>(() => {
     if (speedSamples().length > 0) {
@@ -59,6 +60,18 @@ const createTransferSpeed = (
         setSpeedSamples([]);
         setPrevTransferred(currentTransferred);
         setPrevTimestamp(now);
+        ignoreNextPositiveDelta = true;
+        return;
+      }
+
+      if (
+        ignoreNextPositiveDelta &&
+        transferredInLastInterval > 0
+      ) {
+        setSpeedSamples([]);
+        setPrevTransferred(currentTransferred);
+        setPrevTimestamp(now);
+        ignoreNextPositiveDelta = false;
         return;
       }
 
@@ -68,6 +81,7 @@ const createTransferSpeed = (
         setSpeedSamples([]);
         setPrevTransferred(currentTransferred);
         setPrevTimestamp(now);
+        ignoreNextPositiveDelta = true;
         return;
       }
 
@@ -84,7 +98,10 @@ const createTransferSpeed = (
   };
 
   onMount(() => {
-    setSample();
+    setSpeedSamples([]);
+    setPrevTransferred(transferredSize());
+    setPrevTimestamp(performance.now());
+    ignoreNextPositiveDelta = true;
     interval = window.setInterval(
       setSample,
       sampleInterval,
