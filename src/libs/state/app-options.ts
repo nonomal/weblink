@@ -125,11 +125,13 @@ export const localeOptionsMap = languages as Record<
 >;
 
 export function localFromLanguage(
-  language: string,
+  language: string | null | undefined,
 ): Locale {
+  const normalized = language?.trim().toLowerCase();
+  if (!normalized) return "en-us";
   return (
     Object.keys(localeOptionsMap).find((locale) =>
-      locale.toLowerCase().includes(language.toLowerCase()),
+      locale.toLowerCase().includes(normalized),
     ) ?? "en-us"
   );
 }

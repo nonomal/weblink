@@ -50,8 +50,15 @@ export class PeerSession {
   private connectable: boolean = false;
   private sender: SignalingService;
   private controller: AbortController | null = null;
+  private lifecycleController: AbortController;
   private channels: RTCDataChannel[] = [];
   private messageChannel: RTCDataChannel | null = null;
+  private messageChannelOpen = false;
+  private messageChannelSetups = new WeakSet<RTCDataChannel>();
+  private outgoingQueue: SessionMessage[] = [];
+  private outgoingQueueKeys = new Set<string>();
+  private ensureMessageChannelPromise: Promise<void> | null =
+    null;
   private iceServers: RTCIceServer[] = [];
   private relayOnly: boolean;
   private signalCache: Array<ClientSignal> = [];
@@ -165,22 +172,66 @@ export class PeerSession {
     this.iceServers = iceServers ?? [];
     this.relayOnly = relayOnly;
 
-    window.addEventListener("beforeunload", () => {
-      this.close();
-    });
+    this.lifecycleController = new AbortController();
+    const { signal } = this.lifecycleController;
 
-    document.addEventListener("resume", () => {
-      if (
-        this.peerConnection?.connectionState !== "connected"
-      ) {
-        this.handleDisconnection("resume");
-      }
-    });
+    window.addEventListener(
+      "beforeunload",
+      () => {
+        this.close();
+      },
+      { signal },
+    );
 
-    document.addEventListener("freeze", () => {
-      this.stopAutoReconnect();
-      this.disconnect();
-    });
+    document.addEventListener(
+      "resume",
+      () => {
+        this.onLifecycleResume("resume");
+      },
+      { signal },
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState !== "visible") return;
+        this.onLifecycleResume("visibilitychange");
+      },
+      { signal },
+    );
+
+    window.addEventListener(
+      "pageshow",
+      () => {
+        this.onLifecycleResume("pageshow");
+      },
+      { signal },
+    );
+
+    window.addEventListener(
+      "focus",
+      () => {
+        this.onLifecycleResume("focus");
+      },
+      { signal },
+    );
+
+    window.addEventListener(
+      "online",
+      () => {
+        this.onLifecycleResume("online");
+      },
+      { signal },
+    );
+
+    document.addEventListener(
+      "freeze",
+      () => {
+        this.stopAutoReconnect();
+        this.disconnect();
+      },
+      { signal },
+    );
   }
 
   get clientId() {
@@ -189,6 +240,50 @@ export class PeerSession {
 
   get targetClientId() {
     return this.sender.targetClientId;
+  }
+
+  get isMessageChannelReady() {
+    return this.messageChannelOpen;
+  }
+
+  private onLifecycleResume(reason: string) {
+    if (this.status === "closed") return;
+    if (!this.connectable) return;
+
+    const pc = this.peerConnection;
+    if (!pc) return;
+
+    this.updateMessageChannelOpenState();
+
+    if (pc.connectionState !== "connected") {
+      this.handleDisconnection(`resume:${reason}`);
+      return;
+    }
+    if (
+      pc.iceConnectionState === "disconnected" ||
+      pc.iceConnectionState === "failed"
+    ) {
+      this.handleDisconnection(
+        `resume:${reason}:ice-${pc.iceConnectionState}`,
+      );
+      return;
+    }
+
+    if (this.messageChannelOpen) return;
+    void this.ensureMessageChannelReady(
+      `resume:${reason}`,
+    ).then(() => {
+      if (this.status === "closed") return;
+      if (
+        this.peerConnection?.connectionState !== "connected"
+      ) {
+        return;
+      }
+      if (this.messageChannelOpen) return;
+      this.handleDisconnection(
+        `resume:${reason}:messagechannel-not-ready`,
+      );
+    });
   }
 
   addEventListener<K extends keyof PeerSessionEventMap>(
@@ -332,6 +427,9 @@ export class PeerSession {
             }
             this.connectable = true;
             this.setStatus("connected");
+            void this.ensureMessageChannelReady(
+              "connectionstatechange:connected",
+            );
             break;
           case "disconnected": {
             if (this.disconnectionTimer !== null) return;
@@ -532,6 +630,188 @@ export class PeerSession {
       },
       { signal: controller.signal },
     );
+  }
+
+  private updateMessageChannelOpenState() {
+    const isOpen = this.channels.some(
+      (channel) =>
+        channel.protocol === "message" &&
+        channel.readyState === "open",
+    );
+    if (this.messageChannelOpen === isOpen) return;
+    this.messageChannelOpen = isOpen;
+    this.dispatchEvent(
+      "messagechannelchange",
+      isOpen ? "ready" : "closed",
+    );
+  }
+
+  private getOpenMessageChannel(): RTCDataChannel | null {
+    if (this.messageChannel?.readyState === "open") {
+      return this.messageChannel;
+    }
+    const open = this.channels.find(
+      (channel) =>
+        channel.protocol === "message" &&
+        channel.readyState === "open",
+    );
+    if (open) this.messageChannel = open;
+    return open ?? null;
+  }
+
+  private hasConnectingMessageChannel() {
+    return this.channels.some(
+      (channel) =>
+        channel.protocol === "message" &&
+        channel.readyState === "connecting",
+    );
+  }
+
+  private makeOutgoingKey(message: SessionMessage) {
+    return `${message.type}:${message.id}`;
+  }
+
+  private queueOutgoingMessage(message: SessionMessage) {
+    const key = this.makeOutgoingKey(message);
+    if (this.outgoingQueueKeys.has(key)) return;
+    this.outgoingQueueKeys.add(key);
+    this.outgoingQueue.push(message);
+  }
+
+  private flushOutgoingQueue() {
+    const channel = this.getOpenMessageChannel();
+    if (!channel) return;
+    while (this.outgoingQueue.length > 0) {
+      const message = this.outgoingQueue[0];
+      if (!message) break;
+
+      const key = this.makeOutgoingKey(message);
+      try {
+        channel.send(JSON.stringify(message));
+        this.outgoingQueue.shift();
+        this.outgoingQueueKeys.delete(key);
+      } catch (err) {
+        console.error(
+          `[PeerSession] failed to flush outgoing queue`,
+          err,
+        );
+        break;
+      }
+    }
+  }
+
+  private waitForMessageChannelReady(
+    signal: AbortSignal,
+    timeoutMs: number,
+  ) {
+    if (this.getOpenMessageChannel()) return Promise.resolve();
+
+    return new Promise<void>((resolve, reject) => {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => {
+        controller.abort();
+        reject(
+          new Error(
+            `[PeerSession] wait message channel timeout: after ${timeoutMs}ms`,
+          ),
+        );
+      }, timeoutMs);
+
+      const cleanup = () => {
+        window.clearTimeout(timer);
+        controller.abort();
+      };
+
+      if (signal.aborted) {
+        cleanup();
+        reject(new Error(`[PeerSession] aborted`));
+        return;
+      }
+
+      signal.addEventListener(
+        "abort",
+        () => {
+          cleanup();
+          reject(new Error(`[PeerSession] aborted`));
+        },
+        { once: true },
+      );
+
+      this.addEventListener(
+        "messagechannelchange",
+        (ev) => {
+          if (ev.detail !== "ready") return;
+          cleanup();
+          resolve();
+        },
+        { signal: controller.signal },
+      );
+    });
+  }
+
+  private ensureMessageChannelReady(reason: string) {
+    if (this.ensureMessageChannelPromise) {
+      return this.ensureMessageChannelPromise;
+    }
+
+    const pc = this.peerConnection;
+    const controller = this.controller;
+    if (!pc || !controller) return Promise.resolve();
+
+    this.ensureMessageChannelPromise = (async () => {
+      try {
+        if (this.status === "closed") return;
+        if (pc.connectionState !== "connected") return;
+
+        if (this.getOpenMessageChannel()) {
+          this.flushOutgoingQueue();
+          return;
+        }
+
+        if (
+          this.hasConnectingMessageChannel() ||
+          this.messageChannel
+        ) {
+          const [waitErr] = await catchError(
+            this.waitForMessageChannelReady(
+              controller.signal,
+              3500,
+            ),
+          );
+          if (!waitErr) {
+            this.flushOutgoingQueue();
+            return;
+          }
+        } else if (this.polite) {
+          const [waitErr] = await catchError(
+            this.waitForMessageChannelReady(
+              controller.signal,
+              5000,
+            ),
+          );
+          if (!waitErr) {
+            this.flushOutgoingQueue();
+            return;
+          }
+        }
+
+        const [createErr] = await catchError(
+          this.createChannel("message", "message"),
+        );
+        if (createErr) {
+          console.warn(
+            `[PeerSession] ensure message channel failed (${reason})`,
+            createErr,
+          );
+          return;
+        }
+        this.flushOutgoingQueue();
+      } finally {
+        this.ensureMessageChannelPromise = null;
+      }
+    })();
+
+    return this.ensureMessageChannelPromise;
   }
 
   private async waitForSignalingConnected(
@@ -1092,19 +1372,59 @@ export class PeerSession {
       );
     }
 
-    const existChannel = this.channels.find(
+    const matches = this.channels.filter(
       (channel) =>
         channel.label === label &&
         channel.protocol === protocol,
     );
-    if (
-      existChannel &&
-      existChannel.readyState === "open"
-    ) {
-      console.warn(
-        `[PeerSession] channel ${label} with protocol ${protocol} already exists`,
+
+    const preferred =
+      protocol === "message" &&
+      this.messageChannel &&
+      this.messageChannel.label === label &&
+      this.messageChannel.protocol === protocol &&
+      !["closing", "closed"].includes(
+        this.messageChannel.readyState,
+      )
+        ? this.messageChannel
+        : null;
+
+    if (preferred?.readyState === "open") {
+      return preferred;
+    }
+
+    if (preferred?.readyState === "connecting") {
+      const [waitErr] = await catchError(waitChannel(preferred));
+      if (!waitErr) return preferred;
+    }
+
+    const openChannel = matches.find(
+      (channel) => channel.readyState === "open",
+    );
+    if (openChannel) {
+      if (
+        protocol === "message" &&
+        this.messageChannel !== openChannel
+      ) {
+        this.setupMessageChannel(openChannel);
+      }
+      return openChannel;
+    }
+
+    const connectingChannel = matches.find(
+      (channel) => channel.readyState === "connecting",
+    );
+    if (connectingChannel) {
+      if (
+        protocol === "message" &&
+        this.messageChannel !== connectingChannel
+      ) {
+        this.setupMessageChannel(connectingChannel);
+      }
+      const [waitErr] = await catchError(
+        waitChannel(connectingChannel),
       );
-      return existChannel;
+      if (!waitErr) return connectingChannel;
     }
 
     const channel = this.peerConnection.createDataChannel(
@@ -1121,7 +1441,7 @@ export class PeerSession {
       "close",
       () => {
         const index = this.channels.findIndex(
-          (channel) => channel.id === channel.id,
+          (c) => c.id === channel.id,
         );
         if (index !== -1) {
           this.channels.splice(index, 1);
@@ -1139,12 +1459,22 @@ export class PeerSession {
   }
 
   private setupMessageChannel(channel: RTCDataChannel) {
-    if (this.messageChannel) {
-      this.messageChannel.close();
-      this.messageChannel = null;
-      this.dispatchEvent("messagechannelchange", "closed");
+    if (channel.protocol !== "message") return;
+
+    if (!this.messageChannel) {
+      this.messageChannel = channel;
     }
-    this.messageChannel = channel;
+
+    if (this.messageChannelSetups.has(channel)) {
+      if (channel.readyState === "open") {
+        this.messageChannel = channel;
+        this.updateMessageChannelOpenState();
+        this.flushOutgoingQueue();
+      }
+      return;
+    }
+    this.messageChannelSetups.add(channel);
+
     channel.addEventListener(
       "message",
       (ev) => {
@@ -1163,7 +1493,9 @@ export class PeerSession {
     channel.addEventListener(
       "open",
       () => {
-        this.dispatchEvent("messagechannelchange", "ready");
+        this.messageChannel = channel;
+        this.updateMessageChannelOpenState();
+        this.flushOutgoingQueue();
       },
       { signal: this.controller?.signal },
     );
@@ -1177,15 +1509,26 @@ export class PeerSession {
     channel.addEventListener(
       "close",
       () => {
-        if (this.messageChannel !== channel) return;
-        this.messageChannel = null;
-        this.dispatchEvent(
-          "messagechannelchange",
-          "closed",
-        );
+        if (this.messageChannel === channel) {
+          this.messageChannel = null;
+          this.messageChannel = this.getOpenMessageChannel();
+        }
+        this.updateMessageChannelOpenState();
+
+        if (!this.messageChannelOpen) {
+          void this.ensureMessageChannelReady(
+            "messagechannelchange:closed",
+          );
+        }
       },
       { signal: this.controller?.signal },
     );
+
+    if (channel.readyState === "open") {
+      this.messageChannel = channel;
+      this.updateMessageChannelOpenState();
+      this.flushOutgoingQueue();
+    }
   }
 
   sendMessage(message: SessionMessage) {
@@ -1194,14 +1537,25 @@ export class PeerSession {
         `[PeerSession] session ${this.clientId} is closed, can not send message`,
       );
     }
-    if (!this.messageChannel) {
-      console.error(
-        `[PeerSession] failed to send message, message channel is null`,
+    if (
+      !this.getOpenMessageChannel()
+    ) {
+      this.queueOutgoingMessage(message);
+      void this.ensureMessageChannelReady(
+        `sendMessage:${message.type}`,
       );
       return;
     }
 
-    this.messageChannel.send(JSON.stringify(message));
+    try {
+      this.getOpenMessageChannel()?.send(JSON.stringify(message));
+    } catch (err) {
+      console.error(err);
+      this.queueOutgoingMessage(message);
+      void this.ensureMessageChannelReady(
+        `sendMessage:${message.type}:error`,
+      );
+    }
   }
 
   async renegotiate() {
@@ -1444,8 +1798,8 @@ export class PeerSession {
     if (this.messageChannel) {
       this.messageChannel.close();
       this.messageChannel = null;
-      this.dispatchEvent("messagechannelchange", "closed");
     }
+    this.updateMessageChannelOpenState();
     if (this.remoteStream) {
       this.remoteStream.getTracks().forEach((track) => {
         track.stop();
@@ -1465,8 +1819,11 @@ export class PeerSession {
   }
 
   close() {
+    this.lifecycleController.abort();
     this.stopAutoReconnect();
     this.resetSession();
+    this.outgoingQueue.length = 0;
+    this.outgoingQueueKeys.clear();
     this.setStatus("closed");
   }
 }

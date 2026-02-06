@@ -465,7 +465,10 @@ export default function ClientPage(
               </ul>
             </DropArea>
             <Show
-              when={clientInfo()?.onlineStatus === "online"}
+              when={
+                clientInfo()?.onlineStatus === "online" &&
+                clientInfo()?.messageChannel
+              }
             >
               <ChatBar
                 client={client()}

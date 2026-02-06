@@ -213,7 +213,10 @@ export class SessionService {
               "clientViewData",
               client.clientId,
               "onlineStatus",
-              "online",
+              this.clientViewData[client.clientId]
+                ?.messageChannel
+                ? "online"
+                : "connecting",
             );
             break;
           case "reconnecting":
@@ -278,16 +281,46 @@ export class SessionService {
     session.addEventListener(
       "messagechannelchange",
       (ev) => {
-        if (this.clientViewData[client.clientId]) {
+        const view = this.clientViewData[client.clientId];
+        if (!view) return;
+
+        const ready = ev.detail === "ready";
+
+        setAppState(
+          "session",
+          "clientViewData",
+          client.clientId,
+          "messageChannel",
+          ready,
+        );
+
+        if (!ready) {
+          if (view.onlineStatus === "online") {
+            setAppState(
+              "session",
+              "clientViewData",
+              client.clientId,
+              "onlineStatus",
+              "reconnecting",
+            );
+          }
+          return;
+        }
+
+        if (
+          session.peerConnection?.connectionState ===
+          "connected"
+        ) {
           setAppState(
             "session",
             "clientViewData",
             client.clientId,
-            "messageChannel",
-            ev.detail === "ready",
+            "onlineStatus",
+            "online",
           );
         }
       },
+      { signal: controller.signal },
     );
 
     return session;

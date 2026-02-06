@@ -595,11 +595,16 @@ export const AppStateProvider: Component<
     session: PeerSession,
     message: SessionMessage,
   ) => {
-    void protocol.request(session, message).catch((err) => {
-      const error = getProtocolRequestError(err);
-      if (!error) return;
-      setLocalSendError(message, error);
-    });
+    const timeoutMs = session.isMessageChannelReady
+      ? 5000
+      : 20000;
+    void protocol
+      .request(session, message, { timeoutMs })
+      .catch((err) => {
+        const error = getProtocolRequestError(err);
+        if (!error) return;
+        setLocalSendError(message, error);
+      });
   };
 
   async function sendText(
