@@ -42,7 +42,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { appState } from "@/libs/state/app-state";
 
 export const ChatHeader: Component<{
@@ -149,7 +149,7 @@ export const ChatHeader: Component<{
                             ];
                           if (!session) return;
                           const [error] =
-                            await catchErrorAsync(
+                            await catchError(
                               session.reconnect(),
                             );
                           if (error) {

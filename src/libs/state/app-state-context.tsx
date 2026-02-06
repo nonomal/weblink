@@ -41,7 +41,7 @@ import {
   RequestStorageMessage,
   StorageMessage,
 } from "@/libs/core/message";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 
 async function getClientService(
   options: ClientServiceInitOptions,
@@ -238,7 +238,7 @@ export const AppStateProvider: Component<
         messageStores.addTransfer(transferer);
 
         transferer.addEventListener("ready", async () => {
-          const [error] = await catchErrorAsync(
+          const [error] = await catchError(
             transferer.sendFile(message.ranges),
           );
           if (error) {
@@ -297,7 +297,7 @@ export const AppStateProvider: Component<
               i++
             ) {
               const [err, channel] =
-                await catchErrorAsync(
+                await catchError(
                   session.createChannel(
                     `${transferer.id}-${i}`,
                     "transfer",
@@ -320,7 +320,7 @@ export const AppStateProvider: Component<
 
             messageStores.addTransfer(transferer);
             transferer.addEventListener("ready", async () => {
-              const [error] = await catchErrorAsync(
+              const [error] = await catchError(
                 transferer.sendFile(),
               );
               if (error) {
@@ -336,7 +336,7 @@ export const AppStateProvider: Component<
               i++
             ) {
               const [err, channel] =
-                await catchErrorAsync(
+                await catchError(
                   session.createChannel(
                     `${transferer.id}-${i}`,
                     "transfer",
@@ -479,7 +479,7 @@ export const AppStateProvider: Component<
       cs.listenForJoin(async (targetClient) => {
         console.log(`new client join in `, targetClient);
 
-        const [err, session] = await catchErrorAsync(
+        const [err, session] = await catchError(
           sessionService.addClient(targetClient),
         );
         if (err) {
@@ -494,7 +494,7 @@ export const AppStateProvider: Component<
         messageStores.setClient(targetClient);
 
         if (!session.polite) {
-          const [err] = await catchErrorAsync(
+          const [err] = await catchError(
             session.connect(),
           );
           if (err) {

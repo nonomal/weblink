@@ -25,7 +25,7 @@ import {
   createMicrophones,
   createCameras,
 } from "@/libs/utils/devices";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { toast } from "solid-sonner";
 import {
   Select,
@@ -190,7 +190,7 @@ export const createMediaSelectionDialog = () => {
     enableSpeaker: boolean = true,
     enableMicrophone: boolean = false,
   ) => {
-    const [err, local] = await catchErrorAsync(
+    const [err, local] = await catchError(
       navigator.mediaDevices.getDisplayMedia({
         video: {
           deviceId: devices.camera?.deviceId,
@@ -220,7 +220,7 @@ export const createMediaSelectionDialog = () => {
     });
 
     if (enableMicrophone) {
-      const [err, microphoneMedia] = await catchErrorAsync(
+      const [err, microphoneMedia] = await catchError(
         navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: devices.microphone?.deviceId,
@@ -243,7 +243,7 @@ export const createMediaSelectionDialog = () => {
     enableCamera: boolean = true,
     enableMicrophone: boolean = true,
   ) => {
-    const [err, local] = await catchErrorAsync(
+    const [err, local] = await catchError(
       navigator.mediaDevices.getUserMedia({
         video:
           enableCamera && availableCameras().length !== 0
@@ -313,7 +313,7 @@ export const createMediaSelectionDialog = () => {
       );
       return;
     }
-    const [err, local] = await catchErrorAsync(
+    const [err, local] = await catchError(
       navigator.mediaDevices.getUserMedia({
         audio: true,
       }),
@@ -335,7 +335,7 @@ export const createMediaSelectionDialog = () => {
       );
       return;
     }
-    const [err, local] = await catchErrorAsync(
+    const [err, local] = await catchError(
       navigator.mediaDevices.getUserMedia({
         video: true,
       }),

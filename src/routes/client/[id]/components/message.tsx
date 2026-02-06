@@ -64,7 +64,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { toast } from "solid-sonner";
 import { Spinner } from "@/components/common/spinner";
 import { createPreviewDialog } from "@/components/preview-dialog";
@@ -556,7 +556,7 @@ export const MessageContent: Component<MessageCardProps> = (
           <ContextMenuItem
             class="gap-2"
             onSelect={async () => {
-              const [err] = await catchErrorAsync(
+              const [err] = await catchError(
                 navigator.clipboard.writeText(
                   props.message.data,
                 ),
@@ -582,7 +582,7 @@ export const MessageContent: Component<MessageCardProps> = (
                 class="gap-2"
                 onSelect={async () => {
                   props.close();
-                  const [err] = await catchErrorAsync(
+                  const [err] = await catchError(
                     navigator.share(shareData()),
                   );
                   if (err) {
@@ -630,7 +630,7 @@ export const MessageContent: Component<MessageCardProps> = (
             <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
-                const [err] = await catchErrorAsync(
+                const [err] = await catchError(
                   navigator.clipboard.writeText(
                     props.message.fileName,
                   ),
@@ -673,7 +673,7 @@ export const MessageContent: Component<MessageCardProps> = (
                         const item = new ClipboardItem({
                           [convertedPng.type]: convertedPng,
                         });
-                        const [err] = await catchErrorAsync(
+                        const [err] = await catchError(
                           navigator.clipboard.write([item]),
                         );
 
@@ -709,7 +709,7 @@ export const MessageContent: Component<MessageCardProps> = (
                             [f().type]: f(),
                           });
                           const [err] =
-                            await catchErrorAsync(
+                            await catchError(
                               navigator.clipboard.write([
                                 item,
                               ]),
@@ -754,7 +754,7 @@ export const MessageContent: Component<MessageCardProps> = (
                       class="gap-2"
                       onSelect={async () => {
                         props.close();
-                        const [err] = await catchErrorAsync(
+                        const [err] = await catchError(
                           navigator.share(shareData()),
                         );
                         if (err) {

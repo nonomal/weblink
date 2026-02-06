@@ -11,7 +11,7 @@ import { getTotalChunkCount } from "../cache/chunk-cache";
 import { blobToArrayBuffer, readPacket } from "./utils/packet";
 
 import UncompressWorker from "@/libs/workers/chunk-uncompress?worker";
-import { catchErrorAsync } from "../catch";
+import { catchError } from "../catch";
 
 interface ReceiveData {
   receiveBytes: number;
@@ -199,7 +199,7 @@ export class FileReceiver extends FileTransferBase {
             type: "request-content",
             ranges: ranges,
           } satisfies RequestContentMessage;
-          const [error, channel] = await catchErrorAsync(
+          const [error, channel] = await catchError(
             this.getAnyAvailableChannel(),
           );
           if (error) {

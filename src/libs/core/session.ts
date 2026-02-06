@@ -8,7 +8,7 @@ import {
 } from "../utils/event-emitter";
 import { SessionMessage } from "./message";
 import { waitChannel } from "./utils/channel";
-import { catchErrorAsync, catchErrorSync } from "../catch";
+import { catchError, catchErrorSync } from "../catch";
 import { appState } from "@/libs/state/app-state";
 
 export interface PeerSessionOptions {
@@ -263,7 +263,7 @@ export class PeerSession {
       async (ev: RTCPeerConnectionIceEvent) => {
         if (!ev.candidate) return;
 
-        const [err] = await catchErrorAsync(
+        const [err] = await catchError(
           this.sender.sendSignal({
             type: "candidate",
             data: JSON.stringify({
@@ -553,7 +553,7 @@ export class PeerSession {
         `[PeerSession] attempt reconnect, attempt ${reconnectAttempts}`,
       );
 
-      const [err] = await catchErrorAsync(this.reconnect());
+      const [err] = await catchError(this.reconnect());
       if (err) {
         console.error(
           `[PeerSession] reconnect attempt ${reconnectAttempts} failed, error: `,
@@ -599,7 +599,7 @@ export class PeerSession {
         return;
       }
 
-      [err] = await catchErrorAsync(
+      [err] = await catchError(
         pc.setRemoteDescription(
           new RTCSessionDescription({
             type: "offer",
@@ -616,7 +616,7 @@ export class PeerSession {
         return;
       }
 
-      [err] = await catchErrorAsync(
+      [err] = await catchError(
         pc.setLocalDescription(),
       );
 
@@ -635,7 +635,7 @@ export class PeerSession {
         return;
       }
 
-      [err] = await catchErrorAsync(
+      [err] = await catchError(
         this.sender.sendSignal({
           type: pc.localDescription.type,
           data: JSON.stringify({
@@ -659,7 +659,7 @@ export class PeerSession {
         return;
       }
 
-      [err] = await catchErrorAsync(
+      [err] = await catchError(
         pc.setRemoteDescription(
           new RTCSessionDescription({
             type: "answer",
@@ -679,7 +679,7 @@ export class PeerSession {
       const candidate = new RTCIceCandidate(
         signal.data.candidate,
       );
-      [err] = await catchErrorAsync(
+      [err] = await catchError(
         pc.addIceCandidate(candidate),
       );
 
@@ -1017,7 +1017,7 @@ export class PeerSession {
     }
     if (!this.makingOffer) {
       this.makingOffer = true;
-      const [err] = await catchErrorAsync(
+      const [err] = await catchError(
         handleOffer(this.peerConnection, this.sender),
       );
       if (err) {
@@ -1051,7 +1051,7 @@ export class PeerSession {
     [err] = catchErrorSync(() => this.listen());
     if (err) throw err;
     this.setStatus("reconnecting");
-    [err] = await catchErrorAsync(this.connect());
+    [err] = await catchError(this.connect());
     if (err) throw err;
   }
 
@@ -1164,7 +1164,7 @@ export class PeerSession {
       );
       if (!this.makingOffer) {
         this.makingOffer = true;
-        const [err] = await catchErrorAsync(
+        const [err] = await catchError(
           handleOffer(pc, this.sender),
         );
         if (err) {

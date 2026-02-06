@@ -20,7 +20,7 @@ import { buildPacket } from "./utils/packet";
 
 import CompressWorker from "@/libs/workers/chunk-compress?worker";
 import type { CompressionLevel } from "@/options";
-import { catchErrorAsync, catchErrorSync } from "../catch";
+import { catchError, catchErrorSync } from "../catch";
 
 interface SendData {
   indexes: Set<number>;
@@ -179,7 +179,7 @@ export class FileSender extends FileTransferBase {
           blockData.buffer,
         );
 
-        const [error, channel] = await catchErrorAsync(
+        const [error, channel] = await catchError(
           this.getAnyAvailableChannel(),
         );
         if (error) {
@@ -241,13 +241,13 @@ export class FileSender extends FileTransferBase {
     }
     await queue;
 
-    const [waitError] = await catchErrorAsync(
+    const [waitError] = await catchError(
       this.waitBufferedAmountLowThreshold(0),
     );
     if (waitError) {
       return this.close();
     }
-    const [error, channel] = await catchErrorAsync(
+    const [error, channel] = await catchError(
       this.getAnyAvailableChannel(),
     );
     if (error) {

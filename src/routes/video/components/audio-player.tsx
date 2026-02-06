@@ -1,4 +1,4 @@
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { appState } from "@/libs/state/app-state";
 import {
   Accessor,
@@ -108,7 +108,7 @@ export const AudioPlayerProvider = (props: ParentProps) => {
     if (!audioRef)
       throw new Error("Audio player not initialized");
     if (state) {
-      const [error] = await catchErrorAsync(
+      const [error] = await catchError(
         audioRef.play(),
       );
       if (error) {

@@ -13,7 +13,7 @@ import { Button } from "./ui/button";
 import { downloadFile } from "@/libs/utils/download-file";
 import { IconDownload, IconShare } from "./icons";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
 
 export type PreviewDialogProps = {
@@ -125,7 +125,7 @@ export const createPreviewDialog = () => {
             variant="outline"
             onClick={async () => {
               close();
-              const [err] = await catchErrorAsync(
+              const [err] = await catchError(
                 navigator.share(shareData()),
               );
               if (err) console.error(err);

@@ -43,7 +43,7 @@ import { produce } from "solid-js/store";
 import { createQRCodeDialog } from "./components/create-qrcode-dialog";
 import { createForwardDialog } from "./components/forward-dialog";
 import { createReloadPrompt } from "./libs/hooks/reload-prompt";
-import { catchErrorAsync } from "./libs/catch";
+import { catchError } from "./libs/catch";
 import {
   Avatar,
   AvatarFallback,
@@ -359,7 +359,7 @@ const InnerApp = (props: ParentProps) => {
                   size="sm"
                   class="gap-2"
                   onClick={async () => {
-                    const [err] = await catchErrorAsync(
+                    const [err] = await catchError(
                       navigator.clipboard.writeText(
                         joinUrl(),
                       ),

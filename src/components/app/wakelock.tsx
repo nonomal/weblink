@@ -1,4 +1,4 @@
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import {
   createSignal,
   onMount,
@@ -22,7 +22,7 @@ export const AppWakeLock = (props: {
       return;
     }
 
-    const [err, newLock] = await catchErrorAsync(
+    const [err, newLock] = await catchError(
       navigator.wakeLock.request("screen"),
     );
     if (err) {

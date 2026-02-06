@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { v4 } from "uuid";
 import { generateHMAC } from "./utils/encrypt/hmac";
 import type { TurnServerOptions } from "@/options";
-import { catchErrorAsync } from "../catch";
+import { catchError } from "../catch";
 import { appState, setAppState } from "@/libs/state/app-state";
 import type { SetStoreFunction } from "solid-js/store";
 import { createEffect } from "solid-js";
@@ -85,7 +85,7 @@ export async function getIceServers() {
   }
   if (appState.options.servers.turns)
     for (const turn of appState.options.servers.turns) {
-      const [error, server] = await catchErrorAsync(
+      const [error, server] = await catchError(
         parseTurnServer(turn),
       );
       if (error) {

@@ -19,7 +19,7 @@ import {
 import { UpdateClientOptions } from "./firebase-client-service";
 import { toast } from "solid-sonner";
 import {
-  catchErrorAsync,
+  catchError,
   catchErrorSync,
 } from "@/libs/catch";
 
@@ -322,7 +322,7 @@ export class WebSocketClientService
   }
 
   private async reconnect() {
-    const [error, socket] = await catchErrorAsync(
+    const [error, socket] = await catchError(
       this.initialize(true),
     );
     if (error) {

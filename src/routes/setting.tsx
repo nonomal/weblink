@@ -67,7 +67,7 @@ import { ComponentProps } from "solid-js";
 import { checkIceServerAvailability } from "@/libs/core/utils/turn";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import DropArea from "@/components/drop-area";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { cn } from "@/libs/cn";
 import {
   Select,
@@ -694,7 +694,7 @@ export default function Settings() {
 
                           for (const turn of turns()) {
                             const [error, server] =
-                              await catchErrorAsync(
+                              await catchError(
                                 parseTurnServer(turn),
                               );
                             if (error) {

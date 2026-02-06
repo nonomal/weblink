@@ -82,7 +82,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
 import { IconFile } from "@/components/icon-file";
 import { getTotalChunkCount } from "@/libs/cache/chunk-cache";
@@ -355,7 +355,7 @@ const Sync = (props: RouteSectionProps) => {
                                 class="gap-2"
                                 onSelect={async () => {
                                   const [err] =
-                                    await catchErrorAsync(
+                                    await catchError(
                                       navigator.share(
                                         shareData(),
                                       ),

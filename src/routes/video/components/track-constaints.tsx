@@ -1,5 +1,5 @@
 import { t } from "@/i18n";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import {
   createMemo,
   createEffect,
@@ -232,7 +232,7 @@ export const SpeakerTrackConstraints = (props: {
       ...constraints,
       [name]: value,
     };
-    const [err] = await catchErrorAsync(
+    const [err] = await catchError(
       props.track.applyConstraints(newConstraints),
     );
     if (err) {
@@ -325,7 +325,7 @@ export const MicrophoneTrackConstraints = (props: {
       ...constraints,
       [name]: value,
     };
-    const [err] = await catchErrorAsync(
+    const [err] = await catchError(
       props.track.applyConstraints(newConstraints),
     );
     if (err) {
@@ -444,7 +444,7 @@ export const VideoTrackConstraints = (props: {
           ...constraints,
           [name]: value,
         };
-        const [err] = await catchErrorAsync(
+        const [err] = await catchError(
           props.track.applyConstraints(newConstraints),
         );
         if (err) {

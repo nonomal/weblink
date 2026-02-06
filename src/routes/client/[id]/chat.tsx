@@ -37,7 +37,7 @@ import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
 import { handleDropItems } from "@/libs/utils/process-file";
 import { ClientInfo, Client } from "@/libs/core/type";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { ChatMoreMessageButton } from "./components/chat-more-message-button";
 import { MessageContent } from "./components/message";
 import { ChatHeader } from "./components/chat-header";
@@ -311,7 +311,7 @@ export default function ClientPage(
                 );
 
                 const [error, files] =
-                  await catchErrorAsync(
+                  await catchError(
                     handleDropItems(
                       ev.dataTransfer.items,
                       abortController.signal,

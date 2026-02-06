@@ -1,7 +1,7 @@
 /**
  * catch error for async function
  */
-export async function catchErrorAsync<T>(
+export async function catchError<T>(
   promise: Promise<T>,
 ): Promise<[undefined, T] | [Error]> {
   return promise.then(

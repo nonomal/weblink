@@ -3,7 +3,7 @@ import {
   EventHandler,
   MultiEventEmitter,
 } from "../utils/event-emitter";
-import { catchErrorAsync } from "../catch";
+import { catchError } from "../catch";
 import type { ChunkCache } from "../cache/chunk-cache";
 import type { FileMetaData } from "../cache";
 import type {
@@ -170,7 +170,7 @@ export abstract class FileTransferBase {
     if (this.channels.length === 0) {
       throw new Error("no channel");
     }
-    const [error, channel] = await catchErrorAsync(
+    const [error, channel] = await catchError(
       Promise.any(
         this.channels.map((channel) =>
           waitBufferedAmountLowThreshold(
@@ -194,7 +194,7 @@ export abstract class FileTransferBase {
   public async pause(notify: boolean = false) {
     if (this.closed) return;
     if (notify) {
-      const [error, channel] = await catchErrorAsync(
+      const [error, channel] = await catchError(
         this.getAnyAvailableChannel(),
       );
       if (error) {

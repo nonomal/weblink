@@ -100,7 +100,7 @@ import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dial
 import { Badge } from "@/components/ui/badge";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { toast } from "solid-sonner";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
 import { IconFile } from "../components/icon-file";
 import { getTotalChunkCount } from "@/libs/cache/chunk-cache";
@@ -402,7 +402,7 @@ export default function File() {
                               class="gap-2"
                               onSelect={async () => {
                                 const [err] =
-                                  await catchErrorAsync(
+                                  await catchError(
                                     navigator.share(
                                       shareData(),
                                     ),
@@ -634,7 +634,7 @@ export default function File() {
                       },
                     );
                     const [error, file] =
-                      await catchErrorAsync(
+                      await catchError(
                         handleSelectFolder(
                           ev.currentTarget.files,
                           abortController.signal,
@@ -896,7 +896,7 @@ export default function File() {
                 },
               },
             );
-            const [error, files] = await catchErrorAsync(
+            const [error, files] = await catchError(
               handleDropItems(
                 ev.dataTransfer.items,
                 abortController.signal,

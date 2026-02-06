@@ -31,7 +31,7 @@ import {
   handleDropItems,
   handleSelectFolder,
 } from "@/libs/utils/process-file";
-import { catchErrorAsync } from "@/libs/catch";
+import { catchError } from "@/libs/catch";
 
 export const ChatBar: Component<
   ComponentProps<"div"> & { client: Client }
@@ -120,7 +120,7 @@ export const ChatBar: Component<
                     },
                   },
                 );
-                const [error, file] = await catchErrorAsync(
+                const [error, file] = await catchError(
                   handleSelectFolder(
                     ev.currentTarget.files,
                     abortController.signal,
@@ -249,7 +249,7 @@ export const ChatBar: Component<
                 },
               );
 
-              const [error, files] = await catchErrorAsync(
+              const [error, files] = await catchError(
                 handleDropItems(
                   clipboardData.items,
                   abortController.signal,

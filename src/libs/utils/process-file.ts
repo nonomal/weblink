@@ -1,5 +1,5 @@
 import CompressWorker from "@/libs/workers/zip-compress?worker";
-import { catchErrorAsync, catchErrorSync } from "../catch";
+import { catchError, catchErrorSync } from "../catch";
 
 export type FileWithPath = {
   file?: File;
@@ -31,7 +31,7 @@ export const handleSelectFolder = async (
 
     const folderName = getFolderName(fileEntries);
     let error: Error | undefined = undefined;
-    [error, processedFiles] = await catchErrorAsync(
+    [error, processedFiles] = await catchError(
       processFiles(fileEntries, folderName, signal),
     );
     if (error) return reject(error);
@@ -77,7 +77,7 @@ export const handleDropItems = async (
       };
 
       let error: Error | undefined = undefined;
-      [error] = await catchErrorAsync(
+      [error] = await catchError(
         Promise.all(
           entries.map((entry) =>
             readEntry(entry, filesMap, undefined, signal),
@@ -90,7 +90,7 @@ export const handleDropItems = async (
         | (File | null)[]
         | undefined;
       [error, compressedFoldersResult] =
-        await catchErrorAsync(
+        await catchError(
           Promise.all(
             Object.entries(filesMap.directories).map(
               async ([folderName, files]) =>
@@ -158,7 +158,7 @@ function readEntry(
             return;
           }
 
-          const [error] = await catchErrorAsync(
+          const [error] = await catchError(
             Promise.all(
               entries.map((entry) =>
                 readEntry(entry, map, folderName, signal),

@@ -14,7 +14,7 @@ import {
   StorageMessage,
 } from "@/libs/core/message";
 import { getIceServers } from "@/libs/core/store";
-import { catchErrorAsync, catchErrorSync } from "../catch";
+import { catchError, catchErrorSync } from "../catch";
 import { appState, setAppState } from "@/libs/state/app-state";
 
 export class SessionService {
