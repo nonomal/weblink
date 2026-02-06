@@ -37,6 +37,9 @@ type PeerSessionStatus =
   | "init";
 
 const ConnectionTimeout = 10000;
+const DisconnectedGraceMs = 2500;
+const AutoReconnectMaxAttempts = 10;
+const AutoReconnectMaxDelayMs = 15000;
 
 export class PeerSession {
   private eventEmitter: MultiEventEmitter<PeerSessionEventMap> =
@@ -57,6 +60,9 @@ export class PeerSession {
   private remoteStream: MediaStream | null = null;
   private status: PeerSessionStatus = "init";
   private listenController: AbortController | null = null;
+  private autoReconnectController: AbortController | null =
+    null;
+  private disconnectionTimer: number | null = null;
 
   private applyPreferredCodecPreferences(
     pc: RTCPeerConnection,
@@ -167,11 +173,12 @@ export class PeerSession {
       if (
         this.peerConnection?.connectionState !== "connected"
       ) {
-        this.disconnect();
+        this.handleDisconnection("resume");
       }
     });
 
     document.addEventListener("freeze", () => {
+      this.stopAutoReconnect();
       this.disconnect();
     });
   }
@@ -319,13 +326,33 @@ export class PeerSession {
             this.setStatus("connecting");
             break;
           case "connected":
+            if (this.disconnectionTimer !== null) {
+              window.clearTimeout(this.disconnectionTimer);
+              this.disconnectionTimer = null;
+            }
             this.connectable = true;
             this.setStatus("connected");
             break;
-          case "closed":
-          case "disconnected":
+          case "disconnected": {
+            if (this.disconnectionTimer !== null) return;
+            this.disconnectionTimer = window.setTimeout(
+              () => {
+                this.disconnectionTimer = null;
+                if (pc.connectionState !== "disconnected")
+                  return;
+                this.handleDisconnection(
+                  "connectionstatechange:disconnected",
+                );
+              },
+              DisconnectedGraceMs,
+            );
+            break;
+          }
           case "failed":
-            this.handleDisconnection();
+          case "closed":
+            this.handleDisconnection(
+              `connectionstatechange:${pc.connectionState}`,
+            );
             break;
           default:
             break;
@@ -507,76 +534,244 @@ export class PeerSession {
     );
   }
 
-  private async handleDisconnection() {
+  private async waitForSignalingConnected(
+    signal: AbortSignal,
+    timeoutMs: number,
+  ) {
+    if (this.sender.status === "connected") return;
+    if (this.sender.status === "closed") {
+      throw new Error(
+        `[PeerSession] signaling service is closed`,
+      );
+    }
+    return new Promise<void>((resolve, reject) => {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => {
+        controller.abort();
+        reject(
+          new Error(
+            `[PeerSession] wait signaling connected timeout: after ${timeoutMs}ms`,
+          ),
+        );
+      }, timeoutMs);
+
+      const cleanup = () => {
+        window.clearTimeout(timer);
+        controller.abort();
+      };
+
+      signal.addEventListener(
+        "abort",
+        () => {
+          cleanup();
+          reject(new Error(`[PeerSession] aborted`));
+        },
+        { once: true },
+      );
+
+      this.sender.addEventListener(
+        "statuschange",
+        (ev) => {
+          if (ev.detail === "connected") {
+            cleanup();
+            resolve();
+            return;
+          }
+          if (ev.detail === "closed") {
+            cleanup();
+            reject(
+              new Error(
+                `[PeerSession] signaling service is closed`,
+              ),
+            );
+          }
+        },
+        { signal: controller.signal },
+      );
+    });
+  }
+
+  private async delay(ms: number, signal: AbortSignal) {
+    if (ms <= 0) return;
+    return new Promise<void>((resolve) => {
+      const timer = window.setTimeout(resolve, ms);
+      signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timer);
+          resolve();
+        },
+        { once: true },
+      );
+    });
+  }
+
+  private async waitForPeerConnectionConnected(
+    pc: RTCPeerConnection,
+    timeoutMs: number,
+  ) {
+    if (pc.connectionState === "connected") return;
+    return new Promise<void>((resolve, reject) => {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => {
+        controller.abort();
+        reject(
+          new Error(
+            `[PeerSession] connect timeout: after ${timeoutMs}ms`,
+          ),
+        );
+      }, timeoutMs);
+
+      const cleanup = () => {
+        window.clearTimeout(timer);
+        controller.abort();
+      };
+
+      this.controller?.signal.addEventListener(
+        "abort",
+        () => {
+          cleanup();
+          reject(
+            new Error(`[PeerSession] connect aborted`),
+          );
+        },
+        { once: true },
+      );
+
+      pc.addEventListener(
+        "connectionstatechange",
+        () => {
+          switch (pc.connectionState) {
+            case "connected":
+              cleanup();
+              resolve();
+              break;
+            case "failed":
+            case "closed":
+              cleanup();
+              reject(
+                new Error(
+                  `[PeerSession] Connection failed with state: ${pc.connectionState}`,
+                ),
+              );
+              break;
+            default:
+              break;
+          }
+        },
+        { signal: controller.signal },
+      );
+    });
+  }
+
+  private getAutoReconnectDelayMs(attempt: number) {
+    const base = 500;
+    const exp = Math.round(base * Math.pow(1.7, attempt));
+    const capped = Math.min(AutoReconnectMaxDelayMs, exp);
+    const jitter = Math.round(Math.random() * 250);
+    return capped + jitter;
+  }
+
+  private stopAutoReconnect() {
+    this.autoReconnectController?.abort();
+    this.autoReconnectController = null;
+  }
+
+  private async handleDisconnection(reason: string = "unknown") {
     if (this.status === "closed") {
       console.warn(
         `[PeerSession] session ${this.clientId} is closed, skip handle disconnection`,
       );
       return;
     }
-    this.disconnect();
-    let reconnectAttempts = 0;
-    const attemptReconnect = async () => {
+    if (this.autoReconnectController) {
+      console.log(
+        `[PeerSession] auto reconnect already running, skip: ${reason}`,
+      );
+      return;
+    }
+    if (!this.connectable) {
+      console.warn(
+        `[PeerSession] session ${this.clientId} is not connectable, disconnect`,
+      );
+      this.disconnect();
+      return;
+    }
+
+    const controller = new AbortController();
+    this.autoReconnectController = controller;
+
+    if (this.disconnectionTimer !== null) {
+      window.clearTimeout(this.disconnectionTimer);
+      this.disconnectionTimer = null;
+    }
+
+    this.resetSession();
+    this.setStatus("reconnecting");
+
+    let attempts = 0;
+
+    while (
+      !controller.signal.aborted &&
+      attempts < AutoReconnectMaxAttempts
+    ) {
       if (this.sender.status === "closed") {
         console.warn(
-          `[PeerSession] signaling service is closed, skip handle disconnection`,
+          `[PeerSession] signaling service is closed, stop reconnect`,
         );
         this.close();
         return;
       }
-      if (
-        ["closed", "reconnecting"].includes(this.status)
-      ) {
-        console.warn(
-          `[PeerSession] session ${this.clientId} is ${this.status}, skip handle connection error`,
-        );
-        return;
-      }
-      if (
-        ["connected", "connecting"].includes(
-          this.peerConnection?.connectionState ?? "",
-        )
-      ) {
-        console.warn(
-          `[PeerSession] connection error, session ${this.clientId} is already ${this.peerConnection?.connectionState}, skip handle connection error`,
-        );
-        return;
-      }
-      if (!this.connectable) {
-        console.warn(
-          `[PeerSession] connection error, session ${this.clientId} is not connectable, disconnect`,
-        );
-        return;
-      }
-      reconnectAttempts++;
+      const initiate = !this.polite || attempts > 0;
       console.log(
-        `[PeerSession] attempt reconnect, attempt ${reconnectAttempts}`,
+        `[PeerSession] auto reconnect attempt ${attempts + 1}/${AutoReconnectMaxAttempts} (initiate=${initiate})`,
       );
 
-      const [err] = await catchError(this.reconnect());
-      if (err) {
-        console.error(
-          `[PeerSession] reconnect attempt ${reconnectAttempts} failed, error: `,
-          err,
+      if (this.sender.status !== "connected") {
+        const [signalError] = await catchError(
+          this.waitForSignalingConnected(
+            controller.signal,
+            15000,
+          ),
         );
-        if (reconnectAttempts < 10) {
-          window.setTimeout(
-            () => attemptReconnect(),
-            Math.random() * (500 + reconnectAttempts * 500),
-          );
-        } else {
-          this.disconnect();
-          console.error(
-            `[PeerSession] reconnect failed, reach max reconnect attempts`,
+        if (signalError) {
+          console.warn(
+            `[PeerSession] wait signaling connected failed: ${signalError.message}`,
           );
         }
-      } else {
-        console.log(
-          `[PeerSession] reconnect success, session ${this.clientId}`,
-        );
       }
-    };
-    attemptReconnect();
+
+      const [err] = await catchError(
+        this.reconnect({ initiate }),
+      );
+      if (!err) {
+        console.log(
+          `[PeerSession] auto reconnect success, session ${this.clientId}`,
+        );
+        break;
+      }
+      attempts++;
+      console.error(
+        `[PeerSession] auto reconnect attempt ${attempts} failed:`,
+        err,
+      );
+      if (attempts >= AutoReconnectMaxAttempts) break;
+      await this.delay(
+        this.getAutoReconnectDelayMs(attempts),
+        controller.signal,
+      );
+    }
+
+    this.autoReconnectController = null;
+
+    if (
+      this.peerConnection?.connectionState !== "connected"
+    ) {
+      console.error(
+        `[PeerSession] auto reconnect failed, reach max attempts`,
+      );
+      this.disconnect();
+    }
   }
 
   private async handleSignal(signal: ClientSignal) {
@@ -597,6 +792,17 @@ export class PeerSession {
           `[PeerSession] Offer ignored due to collision, signalingState: ${pc.signalingState}`,
         );
         return;
+      }
+      if (offerCollision) {
+        const [rollbackError] = await catchError(
+          pc.setLocalDescription({ type: "rollback" }),
+        );
+        if (rollbackError) {
+          console.warn(
+            `[PeerSession] rollback failed, signalingState: ${pc.signalingState}`,
+            rollbackError,
+          );
+        }
       }
 
       [err] = await catchError(
@@ -742,8 +948,10 @@ export class PeerSession {
             `[PeerSession] peer connection is null, cache signal`,
           );
           this.signalCache.push(ev.detail);
-          if (ev.detail.type === "candidate") {
-            this.handleDisconnection();
+          if (ev.detail.type === "offer") {
+            this.handleDisconnection(
+              "signal:offer-without-pc",
+            );
           }
         } else {
           await this.handleSignal(ev.detail);
@@ -1035,24 +1243,49 @@ export class PeerSession {
     }
   }
 
-  async reconnect() {
+  async reconnect(
+    options: { initiate?: boolean } = {},
+  ) {
     if (this.status === "closed") {
       throw new Error(
         `[PeerSession] session ${this.clientId} is closed, can not reconnect`,
       );
     }
 
+    const initiate = options.initiate ?? true;
+
     console.log(
       `[PeerSession] peer connection ${this.targetClientId} is null, new connection`,
     );
-    this.disconnect();
+    this.resetSession();
     let err: Error | undefined;
     this.listenController?.abort();
     [err] = catchErrorSync(() => this.listen());
     if (err) throw err;
     this.setStatus("reconnecting");
-    [err] = await catchError(this.connect());
+    const pc = this.peerConnection;
+    if (!pc) {
+      throw new Error(
+        `[PeerSession] peer connection is null after listen`,
+      );
+    }
+
+    if (initiate) {
+      [err] = await catchError(this.connect());
+      if (err) throw err;
+      return;
+    }
+
+    [err] = await catchError(
+      this.waitForPeerConnectionConnected(
+        pc,
+        ConnectionTimeout,
+      ),
+    );
     if (err) throw err;
+
+    this.setupAfterConnectedListeners();
+    this.setStatus("connected");
   }
 
   async connect() {
@@ -1198,6 +1431,10 @@ export class PeerSession {
 
   private resetSession() {
     this.makingOffer = false;
+    if (this.disconnectionTimer !== null) {
+      window.clearTimeout(this.disconnectionTimer);
+      this.disconnectionTimer = null;
+    }
     if (this.controller) {
       this.controller.abort();
       this.controller = null;
@@ -1228,6 +1465,7 @@ export class PeerSession {
   }
 
   close() {
+    this.stopAutoReconnect();
     this.resetSession();
     this.setStatus("closed");
   }
