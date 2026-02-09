@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { PeerSession } from "@/libs/core/session";
 import type { SignalingService } from "@/libs/core/services/type";
 
@@ -42,53 +47,36 @@ const makeStream = (id: string) =>
   }) as unknown as MediaStream;
 
 describe("PeerSession default blank stream", () => {
-  it("falls back to blank stream when local stream is null", () => {
+  it("does not create fallback stream when local stream is null", () => {
     const session = new PeerSession(makeSender("a", "b"), {
       polite: false,
     });
-    const blankStream = makeStream("blank-1");
-
-    (session as any).createDefaultBlankStream =
-      function () {
-        this.defaultBlankStream = blankStream;
-        return blankStream;
-      };
+    (session as any).localStream = makeStream("media-1");
+    (session as any).lastLocalStreamState = "media";
 
     session.setStream(null);
 
-    expect((session as any).localStream).toBe(blankStream);
-    expect((session as any).defaultBlankStream).toBe(
-      blankStream,
-    );
-    expect((session as any).outgoingQueue).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          type: "stream-state",
-          mode: "placeholder",
-        }),
-      ]),
-    );
+    expect((session as any).localStream).toBeNull();
+    expect((session as any).lastLocalStreamState).toBeNull();
+    expect((session as any).outgoingQueue).toHaveLength(0);
   });
 
-  it("keeps current blank stream on repeated null updates", () => {
+  it("syncs null stream to transceivers when pc exists", () => {
     const session = new PeerSession(makeSender("a", "b"), {
       polite: false,
     });
-    const blankStream = makeStream("blank-2");
-    (session as any).defaultBlankStream = blankStream;
-    (session as any).localStream = blankStream;
-    (session as any).lastLocalStreamState = "placeholder";
+    const pc = {
+      getSenders: () => [],
+    } as unknown as RTCPeerConnection;
+    (session as any).peerConnection = pc;
+    (session as any).localStream = makeStream("media-2");
 
-    let createCalls = 0;
-    (session as any).createDefaultBlankStream = () => {
-      createCalls += 1;
-      return makeStream(`blank-next-${createCalls}`);
-    };
+    const renegotiate = vi.fn();
+    (session as any).renegotiate = renegotiate;
 
     session.setStream(null);
 
-    expect(createCalls).toBe(0);
-    expect((session as any).localStream).toBe(blankStream);
-    expect((session as any).outgoingQueue).toHaveLength(0);
+    expect((session as any).localStream).toBeNull();
+    expect(renegotiate).toHaveBeenCalledTimes(1);
   });
 });

@@ -70,9 +70,6 @@ export class PeerSession {
   private signalCache: Array<ClientSignal> = [];
   readonly polite: boolean;
   private localStream: MediaStream | null = null;
-  private defaultBlankStream: MediaStream | null = null;
-  private defaultBlankCanvas: HTMLCanvasElement | null =
-    null;
   private lastLocalStreamState: StreamStateMessage["mode"] | null =
     null;
   private remoteStream: MediaStream | null = null;
@@ -337,71 +334,6 @@ export class PeerSession {
     }
   }
 
-  private isDefaultBlankStream(
-    stream: MediaStream | null,
-  ) {
-    if (!stream || !this.defaultBlankStream) {
-      return false;
-    }
-    return stream.id === this.defaultBlankStream.id;
-  }
-
-  private clearDefaultBlankStream(
-    stream: MediaStream | null,
-  ) {
-    if (!this.isDefaultBlankStream(stream)) {
-      return;
-    }
-    this.defaultBlankStream = null;
-    this.defaultBlankCanvas = null;
-  }
-
-  private createDefaultBlankStream() {
-    if (
-      typeof document === "undefined" ||
-      typeof document.createElement !== "function"
-    ) {
-      return null;
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = 2;
-    canvas.height = 2;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const captureStream = (
-      canvas as HTMLCanvasElement & {
-        captureStream?: (
-          frameRate?: number,
-        ) => MediaStream;
-      }
-    ).captureStream;
-
-    if (typeof captureStream !== "function") {
-      return null;
-    }
-
-    const [captureError, stream] = catchErrorSync(() =>
-      captureStream.call(canvas, 1),
-    );
-
-    if (captureError || !stream) {
-      console.warn(
-        `[PeerSession] failed to create default blank stream`,
-        captureError,
-      );
-      return null;
-    }
-
-    this.defaultBlankCanvas = canvas;
-    this.defaultBlankStream = stream;
-    return stream;
-  }
-
   private createMessageId() {
     if (
       typeof crypto !== "undefined" &&
@@ -413,11 +345,11 @@ export class PeerSession {
   }
 
   private notifyLocalStreamState(stream: MediaStream | null) {
-    if (!stream) return;
-    const mode: StreamStateMessage["mode"] =
-      this.isDefaultBlankStream(stream) ?
-        "placeholder"
-      : "media";
+    if (!stream) {
+      this.lastLocalStreamState = null;
+      return;
+    }
+    const mode: StreamStateMessage["mode"] = "media";
     if (this.lastLocalStreamState === mode) return;
     this.lastLocalStreamState = mode;
 
@@ -646,13 +578,6 @@ export class PeerSession {
       },
       { signal: controller.signal },
     );
-
-    if (!this.localStream) {
-      const blankStream = this.createDefaultBlankStream();
-      if (blankStream) {
-        this.localStream = blankStream;
-      }
-    }
 
     if (this.localStream) {
       const stream = this.localStream;
@@ -1440,7 +1365,6 @@ export class PeerSession {
         localStream.removeTrack(track);
         track.stop();
       });
-      this.clearDefaultBlankStream(localStream);
       this.localStream = null;
     }
     const pc = this.peerConnection;
@@ -1464,18 +1388,8 @@ export class PeerSession {
       stream,
     );
     if (!stream) {
-      if (this.isDefaultBlankStream(this.localStream)) {
-        this.notifyLocalStreamState(this.localStream);
-        return;
-      }
       this.removeStream();
-
-      const blankStream = this.createDefaultBlankStream();
-      if (!blankStream) {
-        return;
-      }
-
-      this.setStream(blankStream);
+      this.notifyLocalStreamState(null);
       return;
     }
 
