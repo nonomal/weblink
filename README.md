@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Weblink is a pure web-based **file transfer** and **text/voice/video chat** application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
+Weblink is a pure web-based **file transfer** and **text/voice/video chat** application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase, WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 
 The project is deployed on Cloudflare Pages and using Firebase as backend can be accessed at [https://v.webl.ink](https://v.webl.ink).
 
@@ -87,19 +87,15 @@ To deploy this project to Vercel, follow these steps:
 
 You will need to configure Firebase keys for both local development and deployment to Vercel. Add the following Firebase environment variables:
 
-`VITE_FIREBASE_API_KEY`
-
-`VITE_FIREBASE_AUTH_DOMAIN`
-
-`VITE_FIREBASE_PROJECT_ID`
-
-`VITE_FIREBASE_STORAGE_BUCKET`
-
-`VITE_FIREBASE_MESSAGING_SENDER_ID`
-
-`VITE_FIREBASE_APP_ID`
-
-`VITE_FIREBASE_DATABASE_URL`
+```env
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+VITE_FIREBASE_DATABASE_URL
+```
 
 ### Vercel Environment Variables Configuration
 
@@ -120,7 +116,7 @@ This application can deploy its own WEBSOCKET server, and a WEBSOCKET server is 
 For local development, create a .env.local file and add the Firebase keys:
 
 ```env
-# backend choose FIREBASE or WEBSOCKET
+# backend choose FIREBASE, WEBSOCKET
 
 # FIREBASE
 VITE_BACKEND=FIREBASE

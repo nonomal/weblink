@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { v4 } from "uuid";
 import { generateHMAC } from "./utils/encrypt/hmac";
 import type { TurnServerOptions } from "@/options";
+import { STORAGE_KEYS } from "@/constants";
 import { catchError } from "../catch";
 import { appState, setAppState } from "@/libs/state/app-state";
 import type { SetStoreFunction } from "solid-js/store";
@@ -123,7 +124,7 @@ export function initializeProfile() {
   profileInitialized = true;
 
   if (typeof localStorage !== "undefined") {
-    const raw = localStorage.getItem("profile");
+    const raw = localStorage.getItem(STORAGE_KEYS.profile);
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as ClientProfile;
@@ -145,7 +146,7 @@ export function initializeProfile() {
   createEffect(() => {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(
-      "profile",
+      STORAGE_KEYS.profile,
       JSON.stringify(appState.profile),
     );
   });

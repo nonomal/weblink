@@ -45,7 +45,7 @@ export type TransferMessage =
   | CompleteMessage
   | PauseMessage;
 
-export const TRANSFER_CHANNEL_PREFIX = "file-";
+export { TRANSFER_CHANNEL_PREFIX } from "@/constants";
 
 export interface FileTransfererOptions {
   cache: ChunkCache;
@@ -88,4 +88,3 @@ export interface FileTransferer {
     options?: boolean | EventListenerOptions,
   ): void;
 }
-

@@ -1,9 +1,8 @@
 import {
   Client,
   ClientID,
-  SessionID,
 } from "@/libs/core/type";
-import { UpdateClientOptions } from "./client/firebase-client-service";
+import type { UpdateClientOptions } from "./client/firebase-client-service";
 import { EventHandler } from "@/libs/utils/event-emitter";
 
 export type ClientServiceEventMap = {

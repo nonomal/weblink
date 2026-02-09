@@ -10,6 +10,13 @@ import { SessionMessage } from "./message";
 import { waitChannel } from "./utils/channel";
 import { catchError, catchErrorSync } from "../catch";
 import { appState } from "@/libs/state/app-state";
+import {
+  PEER_SESSION_AUTO_RECONNECT_MAX_ATTEMPTS,
+  PEER_SESSION_AUTO_RECONNECT_MAX_DELAY_MS,
+  PEER_SESSION_CONNECTION_TIMEOUT_MS,
+  PEER_SESSION_DISCONNECTED_GRACE_MS,
+  SIGNALING_CONNECTION_TIMEOUT_MS,
+} from "@/constants";
 
 export interface PeerSessionOptions {
   polite?: boolean;
@@ -36,11 +43,6 @@ type PeerSessionStatus =
   | "closed"
   | "init";
 
-const ConnectionTimeout = 10000;
-const DisconnectedGraceMs = 2500;
-const AutoReconnectMaxAttempts = 10;
-const AutoReconnectMaxDelayMs = 15000;
-
 export class PeerSession {
   private eventEmitter: MultiEventEmitter<PeerSessionEventMap> =
     new MultiEventEmitter();
@@ -54,7 +56,8 @@ export class PeerSession {
   private channels: RTCDataChannel[] = [];
   private messageChannel: RTCDataChannel | null = null;
   private messageChannelOpen = false;
-  private messageChannelSetups = new WeakSet<RTCDataChannel>();
+  private messageChannelSetups =
+    new WeakSet<RTCDataChannel>();
   private outgoingQueue: SessionMessage[] = [];
   private outgoingQueueKeys = new Set<string>();
   private ensureMessageChannelPromise: Promise<void> | null =
@@ -442,7 +445,7 @@ export class PeerSession {
                   "connectionstatechange:disconnected",
                 );
               },
-              DisconnectedGraceMs,
+              PEER_SESSION_DISCONNECTED_GRACE_MS,
             );
             break;
           }
@@ -704,7 +707,8 @@ export class PeerSession {
     signal: AbortSignal,
     timeoutMs: number,
   ) {
-    if (this.getOpenMessageChannel()) return Promise.resolve();
+    if (this.getOpenMessageChannel())
+      return Promise.resolve();
 
     return new Promise<void>((resolve, reject) => {
       const controller = new AbortController();
@@ -947,7 +951,10 @@ export class PeerSession {
   private getAutoReconnectDelayMs(attempt: number) {
     const base = 500;
     const exp = Math.round(base * Math.pow(1.7, attempt));
-    const capped = Math.min(AutoReconnectMaxDelayMs, exp);
+    const capped = Math.min(
+      PEER_SESSION_AUTO_RECONNECT_MAX_DELAY_MS,
+      exp,
+    );
     const jitter = Math.round(Math.random() * 250);
     return capped + jitter;
   }
@@ -957,7 +964,9 @@ export class PeerSession {
     this.autoReconnectController = null;
   }
 
-  private async handleDisconnection(reason: string = "unknown") {
+  private async handleDisconnection(
+    reason: string = "unknown",
+  ) {
     if (this.status === "closed") {
       console.warn(
         `[PeerSession] session ${this.clientId} is closed, skip handle disconnection`,
@@ -993,7 +1002,7 @@ export class PeerSession {
 
     while (
       !controller.signal.aborted &&
-      attempts < AutoReconnectMaxAttempts
+      attempts < PEER_SESSION_AUTO_RECONNECT_MAX_ATTEMPTS
     ) {
       if (this.sender.status === "closed") {
         console.warn(
@@ -1004,14 +1013,14 @@ export class PeerSession {
       }
       const initiate = !this.polite || attempts > 0;
       console.log(
-        `[PeerSession] auto reconnect attempt ${attempts + 1}/${AutoReconnectMaxAttempts} (initiate=${initiate})`,
+        `[PeerSession] auto reconnect attempt ${attempts + 1}/${PEER_SESSION_AUTO_RECONNECT_MAX_ATTEMPTS} (initiate=${initiate})`,
       );
 
       if (this.sender.status !== "connected") {
         const [signalError] = await catchError(
           this.waitForSignalingConnected(
             controller.signal,
-            15000,
+            SIGNALING_CONNECTION_TIMEOUT_MS,
           ),
         );
         if (signalError) {
@@ -1035,7 +1044,10 @@ export class PeerSession {
         `[PeerSession] auto reconnect attempt ${attempts} failed:`,
         err,
       );
-      if (attempts >= AutoReconnectMaxAttempts) break;
+      if (
+        attempts >= PEER_SESSION_AUTO_RECONNECT_MAX_ATTEMPTS
+      )
+        break;
       await this.delay(
         this.getAutoReconnectDelayMs(attempts),
         controller.signal,
@@ -1051,6 +1063,32 @@ export class PeerSession {
         `[PeerSession] auto reconnect failed, reach max attempts`,
       );
       this.disconnect();
+    }
+  }
+
+  private pendingRemoteCandidates: RTCIceCandidateInit[] =
+    [];
+
+  private async flushPendingRemoteCandidates(
+    pc: RTCPeerConnection,
+  ) {
+    if (!pc.remoteDescription) return;
+    if (this.pendingRemoteCandidates.length === 0) return;
+
+    const pending = this.pendingRemoteCandidates;
+    this.pendingRemoteCandidates = [];
+
+    for (const candidateInit of pending) {
+      const candidate = new RTCIceCandidate(candidateInit);
+      const [err] = await catchError(
+        pc.addIceCandidate(candidate),
+      );
+      if (err && !this.ignoreOffer) {
+        console.error(
+          `[PeerSession] addIceCandidate error: `,
+          err,
+        );
+      }
     }
   }
 
@@ -1102,9 +1140,9 @@ export class PeerSession {
         return;
       }
 
-      [err] = await catchError(
-        pc.setLocalDescription(),
-      );
+      await this.flushPendingRemoteCandidates(pc);
+
+      [err] = await catchError(pc.setLocalDescription());
 
       if (err) {
         console.error(
@@ -1161,9 +1199,20 @@ export class PeerSession {
         );
         return;
       }
+
+      await this.flushPendingRemoteCandidates(pc);
     } else if (signal.type === "candidate") {
+      // Candidates may arrive before remote description,
+      // buffer and replay after setRemoteDescription.
+      if (!pc.remoteDescription) {
+        this.pendingRemoteCandidates.push(
+          signal.data.candidate as RTCIceCandidateInit,
+        );
+        return;
+      }
+
       const candidate = new RTCIceCandidate(
-        signal.data.candidate,
+        signal.data.candidate as RTCIceCandidateInit,
       );
       [err] = await catchError(
         pc.addIceCandidate(candidate),
@@ -1255,6 +1304,17 @@ export class PeerSession {
       },
       { signal: listenController.signal },
     );
+
+    const [waitErr] = await catchError(
+      this.waitForSignalingConnected(
+        listenController.signal,
+        SIGNALING_CONNECTION_TIMEOUT_MS,
+      ),
+    );
+    if (waitErr) {
+      listenController.abort();
+      throw waitErr;
+    }
     this.setStatus("created");
   }
 
@@ -1394,7 +1454,9 @@ export class PeerSession {
     }
 
     if (preferred?.readyState === "connecting") {
-      const [waitErr] = await catchError(waitChannel(preferred));
+      const [waitErr] = await catchError(
+        waitChannel(preferred),
+      );
       if (!waitErr) return preferred;
     }
 
@@ -1511,7 +1573,8 @@ export class PeerSession {
       () => {
         if (this.messageChannel === channel) {
           this.messageChannel = null;
-          this.messageChannel = this.getOpenMessageChannel();
+          this.messageChannel =
+            this.getOpenMessageChannel();
         }
         this.updateMessageChannelOpenState();
 
@@ -1537,9 +1600,7 @@ export class PeerSession {
         `[PeerSession] session ${this.clientId} is closed, can not send message`,
       );
     }
-    if (
-      !this.getOpenMessageChannel()
-    ) {
+    if (!this.getOpenMessageChannel()) {
       this.queueOutgoingMessage(message);
       void this.ensureMessageChannelReady(
         `sendMessage:${message.type}`,
@@ -1548,7 +1609,9 @@ export class PeerSession {
     }
 
     try {
-      this.getOpenMessageChannel()?.send(JSON.stringify(message));
+      this.getOpenMessageChannel()?.send(
+        JSON.stringify(message),
+      );
     } catch (err) {
       console.error(err);
       this.queueOutgoingMessage(message);
@@ -1597,9 +1660,7 @@ export class PeerSession {
     }
   }
 
-  async reconnect(
-    options: { initiate?: boolean } = {},
-  ) {
+  async reconnect(options: { initiate?: boolean } = {}) {
     if (this.status === "closed") {
       throw new Error(
         `[PeerSession] session ${this.clientId} is closed, can not reconnect`,
@@ -1633,7 +1694,7 @@ export class PeerSession {
     [err] = await catchError(
       this.waitForPeerConnectionConnected(
         pc,
-        ConnectionTimeout,
+        PEER_SESSION_CONNECTION_TIMEOUT_MS,
       ),
     );
     if (err) throw err;
@@ -1684,10 +1745,10 @@ export class PeerSession {
       const timer = window.setTimeout(() => {
         reject(
           new Error(
-            `[PeerSession] connect timeout: after ${ConnectionTimeout}ms`,
+            `[PeerSession] connect timeout: after ${PEER_SESSION_CONNECTION_TIMEOUT_MS}ms`,
           ),
         );
-      }, ConnectionTimeout);
+      }, PEER_SESSION_CONNECTION_TIMEOUT_MS);
 
       this.controller?.signal.addEventListener(
         "abort",

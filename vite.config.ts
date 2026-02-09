@@ -69,7 +69,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
   base: "/",
   injectManifest: { swSrc: "src/sw.ts" },
   devOptions: {
-    enabled: true,
+    enabled: false,
     /* when using generateSW the PWA plugin will switch to classic */
     type: "module",
     navigateFallback: "index.html",

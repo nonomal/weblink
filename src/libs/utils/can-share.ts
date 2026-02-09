@@ -1,5 +1,4 @@
-// Maximum file size (50MB)
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+import { MAX_SHARE_FILE_SIZE_BYTES } from "@/constants";
 
 export function canShareFile(file: File) {
   // Check if navigator.canShare is supported
@@ -45,9 +44,11 @@ export function canShareFile(file: File) {
   ];
 
   // Check file size
-  if (file.size > MAX_FILE_SIZE) {
+  if (file.size > MAX_SHARE_FILE_SIZE_BYTES) {
     console.warn(
-      `File size exceeds maximum limit of ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
+      `File size exceeds maximum limit of ${
+        MAX_SHARE_FILE_SIZE_BYTES / (1024 * 1024)
+      }MB`,
     );
     return false;
   }

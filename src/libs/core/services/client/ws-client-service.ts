@@ -16,7 +16,7 @@ import {
   ClientService,
   ClientServiceInitOptions,
 } from "../type";
-import { UpdateClientOptions } from "./firebase-client-service";
+import type { UpdateClientOptions } from "./firebase-client-service";
 import { toast } from "solid-sonner";
 import {
   catchError,

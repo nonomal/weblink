@@ -7,6 +7,10 @@ import type {
 } from "@/libs/core/message";
 import type { ClientID } from "@/libs/core/type";
 import { createRtcService } from "@/libs/services/rtc-service";
+import {
+  RTC_PROTOCOL_DEDUP_CLEANUP_INTERVAL_MS,
+  RTC_PROTOCOL_DEDUP_TTL_MS,
+} from "@/constants";
 
 export type RtcProtocolMessageContext<
   T extends SessionMessage = SessionMessage,
@@ -68,9 +72,6 @@ type ProcessedEntry = {
   strategy: DedupStrategy;
   createdAt?: number;
 };
-
-const DEDUP_TTL_MS = 10 * 60 * 1000;
-const DEDUP_CLEANUP_INTERVAL_MS = 60 * 1000;
 
 const dedupStrategyByType: Partial<
   Record<SessionMessage["type"], DedupStrategy>
@@ -303,13 +304,16 @@ export class RtcProtocol {
 
   private cleanupProcessed() {
     const now = Date.now();
-    if (now - this.lastCleanupAt < DEDUP_CLEANUP_INTERVAL_MS) {
+    if (
+      now - this.lastCleanupAt <
+      RTC_PROTOCOL_DEDUP_CLEANUP_INTERVAL_MS
+    ) {
       return;
     }
     this.lastCleanupAt = now;
 
     for (const [key, entry] of this.processed) {
-      if (now - entry.seenAt > DEDUP_TTL_MS) {
+      if (now - entry.seenAt > RTC_PROTOCOL_DEDUP_TTL_MS) {
         this.processed.delete(key);
       }
     }

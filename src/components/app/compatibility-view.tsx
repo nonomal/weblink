@@ -4,6 +4,7 @@ import {
   isWebRTCAvailable,
   MIN_VERSIONS,
 } from "@/libs/utils/browser-compatibility";
+import { APP_NAME } from "@/constants";
 import { JSX } from "solid-js";
 import { createDialog } from "../dialogs/dialog";
 import { ThemeToggle } from "@/components/common/theme-toggle";
@@ -66,7 +67,7 @@ export const CompatibilityView = (props: {
       <div class="bg-background/80 flex h-screen flex-col p-2 backdrop-blur">
         <div class="flex items-center justify-between">
           <h2 class="p-2 font-mono text-xl font-bold">
-            Weblink
+            {APP_NAME}
           </h2>
           <ThemeToggle />
         </div>

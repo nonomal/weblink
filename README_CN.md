@@ -4,7 +4,7 @@
 
 ## 简介
 
-Weblink 是一款基于 WebRTC 的纯网页**文件传输**和**文字/语音/视频聊天**应用，无需下载或安装，直接在浏览器中即可使用。它采用了无服务器的 P2P 架构，支持多种后端，包括 Firebase 和 WebSocket，实现高效的点对点连接。此外，Weblink 通过端到端加密，保障信令消息的隐私和安全。
+Weblink 是一款基于 WebRTC 的纯网页**文件传输**和**文字/语音/视频聊天**应用，无需下载或安装，直接在浏览器中即可使用。它采用了无服务器的 P2P 架构，支持多种后端，包括 Firebase、WebSocket 通过端到端加密，保障信令消息的隐私和安全。
 
 该项目已通过 Cloudflare Pages + Firebase 部署，请访问 [https://v.webl.ink](https://v.webl.ink)。
 
@@ -86,19 +86,15 @@ $env:ENABLE_SSL='true' && docker compose up -d
 
 在本地开发和部署到 Vercel 时，你需要配置 Firebase 的密钥。以下是需要添加的 Firebase 环境变量：
 
-`VITE_FIREBASE_API_KEY`
-
-`VITE_FIREBASE_AUTH_DOMAIN`
-
-`VITE_FIREBASE_PROJECT_ID`
-
-`VITE_FIREBASE_STORAGE_BUCKET`
-
-`VITE_FIREBASE_MESSAGING_SENDER_ID`
-
-`VITE_FIREBASE_APP_ID`
-
-`VITE_FIREBASE_DATABASE_URL`
+```env
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID
+VITE_FIREBASE_DATABASE_URL
+```
 
 ### WEBSOCKET 配置
 
@@ -116,10 +112,10 @@ $env:ENABLE_SSL='true' && docker compose up -d
 
 ### 本地环境变量 (.env.local)
 
-在本地开发时，创建一个 .env.local 文件，将 后端选择 FIREBASE 或 WEBSOCKET：
+在本地开发时，创建一个 .env.local 文件，将 后端选择 FIREBASE、WEBSOCKET
 
 ```env
-# 后端选择 FIREBASE 或 WEBSOCKET
+# 后端选择 FIREBASE、WEBSOCKET
 
 # FIREBASE 配置
 VITE_BACKEND=FIREBASE

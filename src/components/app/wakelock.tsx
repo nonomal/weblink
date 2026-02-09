@@ -26,7 +26,8 @@ export const AppWakeLock = (props: {
       navigator.wakeLock.request("screen"),
     );
     if (err) {
-      console.error(err);
+      if (err.name !== "NotAllowedError")
+        console.error(err);
       return;
     }
     setWakeLock(newLock);

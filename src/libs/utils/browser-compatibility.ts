@@ -1,3 +1,5 @@
+import { MIN_IOS_VERSION, MIN_VERSIONS } from "@/constants";
+
 // Define the configuration object for browser detection rules
 const BROWSER_RULES = [
   // iOS third-party browser
@@ -123,25 +125,14 @@ function compareVersions(current: string, target: string) {
   return true;
 }
 
-export const MIN_VERSIONS: Record<string, string> = {
-  Chrome: "66.0.0", // Chrome 66+
-  Firefox: "63.0.0", // Firefox 63+
-  Safari: "16.0.0", // Safari 16+
-  Edge: "79.0.0", // Chromium-based Edge 79+
-  Opera: "53.0.0", // Opera 53+
-  "Chrome iOS": "16.0.0", // iOS 16+
-  "Firefox iOS": "16.0.0", // iOS 16+
-  "Edge iOS": "16.0.0", // iOS 16+
-  "Opera iOS": "16.0.0", // iOS 16+
-};
+export { MIN_VERSIONS };
 
 export function checkBrowserSupport() {
   const { engine, version, os, osVersion } =
     getBrowserEngineInfo();
 
   if (os === "iOS") {
-    const minIOSVersion = "16.0.0";
-    return compareVersions(osVersion, minIOSVersion);
+    return compareVersions(osVersion, MIN_IOS_VERSION);
   }
 
   const minVersion = MIN_VERSIONS[engine];

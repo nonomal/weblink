@@ -17,7 +17,8 @@
     "test": "vitest",
     "clean": "node scripts/clean.js",
     "generate-pwa-assets": "pwa-assets-generator",
-    "lint": "tsc -p tsconfig.json --noEmit --skipLibCheck"
+    "lint": "tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "appwrite:setup": "appwrite --force push settings && appwrite --force --all push tables"
   },
   "dependencies": {
     "@corvu/drawer": "^0.2.4",

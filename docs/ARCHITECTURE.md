@@ -23,6 +23,8 @@ the low-level `core` layer.
 
 - `src/app.tsx`: Application shell (providers, global UI,
   dialogs).
+- `src/constants.ts`: Project-wide constants shared across
+  UI/services/core (storage keys, timeouts, prefixes).
 - `src/routes/`: Route-level pages (Solid Router).
   - `src/routes/client/[id]/...`: Main client session pages
     (chat/sync, etc).
@@ -79,6 +81,9 @@ Most non-trivial logic lives in `src/libs/`:
 - Keep WebRTC details in `src/libs/core`. Prefer exposing
   app-level methods from `AppStateContext` over constructing
   protocol/message objects inside UI.
+- Keep feature-local constants close to the code. Promote
+  constants into `src/constants.ts` only when they are used
+  across multiple modules/layers or need consistent tuning.
 - Prefer `AbortController` for listener lifetimes; avoid
   leaked intervals/listeners.
 - Prefer explicit types at module boundaries (protocols,

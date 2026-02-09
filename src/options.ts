@@ -3,6 +3,7 @@ import { createEffect, createSignal, onCleanup } from "solid-js";
 import { reconcile } from "solid-js/store";
 import type { SetStoreFunction } from "solid-js/store";
 import { appState, setAppState } from "@/libs/state/app-state";
+import { STORAGE_KEYS } from "@/constants";
 import type { AppOption } from "@/libs/state/app-options";
 import {
   getDefaultAppOptions,
@@ -26,13 +27,13 @@ export {
 
 export const [appInitialized, setAppInitialized] =
   makePersisted(createSignal(false), {
-    name: "app_initialized",
+    name: STORAGE_KEYS.appInitialized,
     storage: localStorage,
   });
 
 export const [starterMessageSent, setStarterMessageSent] =
   makePersisted(createSignal(false), {
-    name: "starter_message_sent",
+    name: STORAGE_KEYS.starterMessageSent,
     storage: localStorage,
   });
 
@@ -49,7 +50,9 @@ export function initializeAppOptions() {
       return defaults;
     }
 
-    const raw = localStorage.getItem("app_options");
+    const raw = localStorage.getItem(
+      STORAGE_KEYS.appOptions,
+    );
     if (!raw) return defaults;
 
     try {
@@ -76,7 +79,7 @@ export function initializeAppOptions() {
   createEffect(() => {
     if (typeof localStorage === "undefined") return;
     localStorage.setItem(
-      "app_options",
+      STORAGE_KEYS.appOptions,
       JSON.stringify(appState.options),
     );
   });

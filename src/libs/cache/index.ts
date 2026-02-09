@@ -27,5 +27,4 @@ export interface FileMetaData extends ChunkMetaData {
   isMerging?: boolean;
 }
 
-export const DBNAME_PREFIX: string = "file-";
-
+export { DBNAME_PREFIX } from "@/constants";
