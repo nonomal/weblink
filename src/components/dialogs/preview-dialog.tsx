@@ -8,10 +8,10 @@ import {
   Show,
   Switch,
 } from "solid-js";
-import { Textarea } from "./ui/textarea";
-import { Button } from "./ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { downloadFile } from "@/libs/utils/download-file";
-import { IconDownload, IconShare } from "./icons";
+import { IconDownload, IconShare } from "@/components/icons";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { catchError } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
@@ -94,7 +94,7 @@ export const createPreviewDialog = () => {
     };
     return shareData;
   });
-  const { open, Component, close } = createDialog({
+  const { open, close } = createDialog({
     title: () => t("common.preview_dialog.title"),
     description: () => (
       <p class="flex items-center justify-between gap-2">
@@ -146,7 +146,6 @@ export const createPreviewDialog = () => {
 
   return {
     open: handleOpen,
-    Component,
   };
 };
 
@@ -155,7 +154,7 @@ export const createSendItemPreviewDialog = () => {
 
   const [name, setName] = createSignal("");
 
-  const { open, close, submit, Component } = createDialog({
+  const { open, close, submit } = createDialog({
     title: () => t("common.send_item_preview_dialog.title"),
     description: () =>
       t("common.send_item_preview_dialog.description", {
@@ -183,6 +182,5 @@ export const createSendItemPreviewDialog = () => {
 
   return {
     open: handleOpen,
-    Component,
   };
 };

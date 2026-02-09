@@ -29,10 +29,22 @@ the low-level `core` layer.
   - `src/routes/client/[id]/...`: Main client session pages
     (chat/sync, etc).
 - `src/components/`: Reusable UI building blocks.
-  - `components/app/`: app-scoped components (nav, about,
+  - `components/app/`: app-scoped components (nav,
     wakelock, etc).
-  - `components/dialogs/`: dialog primitives (dialog/drawer)
-    + app dialogs.
+  - `components/dialogs/`: unified dialog directory.
+    - Modal primitives: `base.tsx`, `dialog.tsx`,
+      `drawer.tsx`.
+    - Business dialogs: room/join, QR code share, preview,
+      forward, delete confirms, about, media selection,
+      compatibility details, media-constraints dialogs,
+      etc.
+    - `ModalProvider` is mounted once in `src/app.tsx` and
+      dialog factories auto-register themselves globally.
+      Consumers call `open()` directly and do not render
+      dialog components in page JSX.
+    - Route pages should import dialog creators from this
+      directory instead of defining separate dialog files
+      under route folders.
   - `components/ui/`: shared UI primitives (buttons, inputs,
     popovers, etc).
 
@@ -42,6 +54,8 @@ Most non-trivial logic lives in `src/libs/`:
 
 - `src/libs/state/`: App state store and context provider.
   - `app-state.ts`: Shared store shape + setters.
+    - Includes media constraint state
+      (`media.constraints.*`) used by video dialogs/pages.
   - `app-state-context.tsx`: The main UI-facing API surface
     (functions that UI calls).
 - `src/libs/services/`: App-level orchestration.

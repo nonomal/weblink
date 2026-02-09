@@ -315,6 +315,12 @@
       "title": "Delete Files",
       "description": "Confirm delete these {{count}} files?"
     },
+    "delete_file_message_dialog": {
+      "title": "Delete File Message",
+      "description": "Confirm deleting this file message.",
+      "delete_transfer": "Also delete related transfer task",
+      "delete_cache": "Also delete local cache"
+    },
     "client_info_dialog": {
       "title": "Client {{name}} Info",
       "status": "Status",

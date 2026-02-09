@@ -296,6 +296,12 @@
       "title": "確認刪除",
       "description": "確認刪除以下 {{count}} 個檔案？"
     },
+    "delete_file_message_dialog": {
+      "title": "刪除檔案訊息",
+      "description": "確認刪除此檔案訊息。",
+      "delete_transfer": "同時刪除對應傳輸任務",
+      "delete_cache": "同時刪除本地快取"
+    },
     "preview_dialog": {
       "title": "預覽",
       "unsupported_file_type": "不支援的檔案類型"

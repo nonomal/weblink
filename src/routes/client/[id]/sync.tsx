@@ -11,7 +11,7 @@ import {
   IconShare,
   IconSync,
 } from "@/components/icons";
-import { createPreviewDialog } from "@/components/preview-dialog";
+import { createPreviewDialog } from "@/components/dialogs/preview-dialog";
 import {
   Avatar,
   AvatarFallback,
@@ -75,7 +75,7 @@ import {
   For,
   Show,
 } from "solid-js";
-import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dialog";
+import { createComfirmDeleteItemsDialog } from "@/components/dialogs/confirm-delete-items-dialog";
 import { FileTransferer } from "@/libs/core/file-transferer";
 import {
   Tooltip,
@@ -414,10 +414,8 @@ const Sync = (props: RouteSectionProps) => {
     }),
   ];
 
-  const {
-    open: openDeleteDialog,
-    Component: DeleteDialog,
-  } = createComfirmDeleteItemsDialog();
+  const { open: openDeleteDialog } =
+    createComfirmDeleteItemsDialog();
 
   const [storage, setStorage] = createSignal<
     ChunkCacheInfo[]
@@ -463,8 +461,7 @@ const Sync = (props: RouteSectionProps) => {
     });
 
   const [globalFilter, setGlobalFilter] = createSignal("");
-  const { open: openPreview, Component: PreviewDialog } =
-    createPreviewDialog();
+  const { open: openPreview } = createPreviewDialog();
   const table: SolidTable<ChunkMetaData> = createSolidTable(
     {
       get data() {
@@ -563,8 +560,6 @@ const Sync = (props: RouteSectionProps) => {
 
   return (
     <>
-      <PreviewDialog />
-      <DeleteDialog />
       <div class="bg-background/50 absolute inset-0 z-[-1] backdrop-blur"></div>
       <div class="bg-background/50 flex h-full w-full flex-col gap-2 p-0">
         <div class="flex items-center gap-2 p-2">

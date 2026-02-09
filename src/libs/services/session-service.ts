@@ -10,9 +10,9 @@ import {
 } from "../core/services/type";
 import { Accessor, createEffect } from "solid-js";
 import {
-  SendClipboardMessage,
-  StorageMessage,
-} from "@/libs/core/message";
+  type SendClipboardMessage,
+  type StorageMessage,
+} from "@/libs/services/rtc-protocol";
 import { getIceServers } from "@/libs/core/store";
 import { catchError, catchErrorSync } from "../catch";
 import { appState, setAppState } from "@/libs/state/app-state";

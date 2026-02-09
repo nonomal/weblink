@@ -43,7 +43,7 @@ import {
   parseTurnServers,
   stringifyTurnServers,
 } from "@/options";
-import createAboutDialog from "@/components/app/about-dialog";
+import createAboutDialog from "@/components/dialogs/about-dialog";
 import { Button } from "@/components/ui/button";
 import {
   IconClose,
@@ -53,7 +53,6 @@ import {
   IconInfo,
 } from "@/components/icons";
 import { Separator } from "@/components/ui/seprartor";
-import { createDialog } from "@/components/dialogs/dialog";
 import { toast } from "solid-sonner";
 import { Input } from "@/components/ui/input";
 import { cacheManager } from "@/libs/services/cache-serivce";
@@ -78,18 +77,17 @@ import {
 } from "@/components/ui/select";
 import { createAsync } from "@solidjs/router";
 import { appState } from "@/libs/state/app-state";
+import {
+  createClearServiceWorkerCacheDialog,
+  createResetOptionsDialog,
+} from "@/components/dialogs/setting-dialogs";
 
 export default function Settings() {
-  const { open, Component: AboutDialogComponent } =
-    createAboutDialog();
-  const {
-    open: openResetOptionsDialog,
-    Component: ResetOptionsDialogComponent,
-  } = createResetOptionsDialog();
-  const {
-    open: openClearServiceWorkerCacheDialog,
-    Component: ClearServiceWorkerCacheDialogComponent,
-  } = createClearServiceWorkerCacheDialog();
+  const { open } = createAboutDialog();
+  const { open: openResetOptionsDialog } =
+    createResetOptionsDialog();
+  const { open: openClearServiceWorkerCacheDialog } =
+    createClearServiceWorkerCacheDialog();
   const [imageHole, setImageHole] =
     createSignal<HTMLElement | null>(null);
   const size = createElementSize(imageHole);
@@ -192,9 +190,6 @@ export default function Settings() {
 
   return (
     <>
-      <AboutDialogComponent />
-      <ResetOptionsDialogComponent />
-      <ClearServiceWorkerCacheDialogComponent />
       <div
         class="bg-background/80 relative container px-4 backdrop-blur
           [mask:url(#bg-image-mask)]"
@@ -1519,91 +1514,3 @@ export default function Settings() {
     </>
   );
 }
-
-const createResetOptionsDialog = () => {
-  const { open, close, submit, Component } = createDialog({
-    title: () => t("common.reset_options_dialog.title"),
-    description: () =>
-      t("common.reset_options_dialog.description"),
-    content: () => (
-      <p>{t("common.reset_options_dialog.content")}</p>
-    ),
-    cancel: (
-      <Button onClick={() => close()}>
-        {t("common.action.cancel")}
-      </Button>
-    ),
-    confirm: (
-      <Button
-        variant="destructive"
-        onClick={() => submit(true)}
-      >
-        {t("common.action.confirm")}
-      </Button>
-    ),
-  });
-  return {
-    open,
-    Component,
-  };
-};
-
-const createClearServiceWorkerCacheDialog = () => {
-  const [reload, setReload] = createSignal(true);
-  const { open, close, submit, Component } = createDialog<{
-    reload: boolean;
-  }>({
-    title: () =>
-      t("common.clear_service_worker_cache_dialog.title"),
-    description: () =>
-      t(
-        "common.clear_service_worker_cache_dialog.description",
-      ),
-    content: () => (
-      <>
-        <p>
-          {t(
-            "common.clear_service_worker_cache_dialog.content",
-          )}
-        </p>
-        <p>
-          <Switch
-            class="flex items-center justify-between text-sm"
-            checked={reload()}
-            onChange={(isChecked) => setReload(isChecked)}
-          >
-            <SwitchLabel>
-              {t(
-                "common.clear_service_worker_cache_dialog.reload",
-              )}
-            </SwitchLabel>
-            <SwitchControl>
-              <SwitchThumb />
-            </SwitchControl>
-          </Switch>
-        </p>
-      </>
-    ),
-    cancel: (
-      <Button onClick={() => close()}>
-        {t("common.action.cancel")}
-      </Button>
-    ),
-    confirm: (
-      <Button
-        variant="destructive"
-        onClick={() =>
-          submit({
-            reload: reload(),
-          })
-        }
-      >
-        {t("common.action.confirm")}
-      </Button>
-    ),
-  });
-  return {
-    open,
-    Component,
-  };
-};

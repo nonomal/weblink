@@ -1,6 +1,6 @@
 import { Component, Match, Show, Switch } from "solid-js";
 import { t } from "@/i18n";
-import { createRoomDialog } from "@/components/join-dialog";
+import { createRoomDialog } from "@/components/dialogs/join-dialog";
 import { useAppState } from "@/libs/state/app-state-context";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/common/spinner";
@@ -10,30 +10,20 @@ import {
   IconLogout,
   IconShare,
 } from "@/components/icons";
-import { createQRCodeDialog } from "@/components/create-qrcode-dialog";
+import { createQRCodeDialog } from "@/components/dialogs/create-qrcode-dialog";
 import { toast } from "solid-sonner";
 import { appState } from "@/libs/state/app-state";
 const Client: Component = (props) => {
   const { joinRoom, leaveRoom } = useAppState();
-  const {
-    open: openRoomDialog,
-    Component: RoomDialogComponent,
-  } = createRoomDialog();
-  const {
-    open: openQRCodeDialog,
-    Component: QRCodeDialogComponent,
-  } = createQRCodeDialog();
+  const { open: openRoomDialog } = createRoomDialog();
+  const { open: openQRCodeDialog } = createQRCodeDialog();
   return (
-    <>
-      <RoomDialogComponent />
-      <QRCodeDialogComponent />
-
-      <div
-        class="border-border/50 bg-background/50 absolute top-1/2 left-1/2
-          flex max-h-[100vh] w-full max-w-xs -translate-x-1/2
-          -translate-y-1/2 flex-col items-stretch gap-2
-          overflow-hidden rounded-lg border p-4 backdrop-blur"
-      >
+    <div
+      class="border-border/50 bg-background/50 absolute top-1/2 left-1/2
+        flex max-h-[100vh] w-full max-w-xs -translate-x-1/2
+        -translate-y-1/2 flex-col items-stretch gap-2
+        overflow-hidden rounded-lg border p-4 backdrop-blur"
+    >
         <Switch>
           <Match
             when={
@@ -142,8 +132,7 @@ const Client: Component = (props) => {
             </Show>
           </Match>
         </Switch>
-      </div>
-    </>
+    </div>
   );
 };
 

@@ -48,12 +48,9 @@ import {
   createPresetMicrophoneConstraintsDialog,
   createPresetSpeakerTrackConstraintsDialog,
   createPresetVideoConstraintsDialog,
-  microphoneConstraints,
-  speakerConstraints,
-  videoConstraints,
-} from "./track-constaints";
+} from "@/components/dialogs/media-constraints-dialogs";
 import { makePersisted } from "@solid-primitives/storage";
-import { VideoDisplay } from "./video-display";
+import { VideoDisplay } from "@/routes/video/components/video-display";
 import { appState } from "@/libs/state/app-state";
 
 export type MediaDeviceInfoType = {
@@ -195,13 +192,13 @@ export const createMediaSelectionDialog = () => {
         video: {
           deviceId: devices.camera?.deviceId,
           displaySurface: "monitor",
-          ...videoConstraints,
+          ...appState.media.constraints.video,
         },
         audio:
           enableSpeaker && speakers().length !== 0
             ? {
                 deviceId: devices.speaker?.deviceId,
-                ...speakerConstraints,
+                ...appState.media.constraints.speaker,
               }
             : false,
       }),
@@ -224,7 +221,7 @@ export const createMediaSelectionDialog = () => {
         navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: devices.microphone?.deviceId,
-            ...microphoneConstraints,
+            ...appState.media.constraints.microphone,
           },
         }),
       );
@@ -249,7 +246,7 @@ export const createMediaSelectionDialog = () => {
           enableCamera && availableCameras().length !== 0
             ? {
                 deviceId: devices.camera?.deviceId,
-                ...videoConstraints,
+                ...appState.media.constraints.video,
               }
             : undefined,
         audio:
@@ -257,7 +254,7 @@ export const createMediaSelectionDialog = () => {
           availableMicrophones().length !== 0
             ? {
                 deviceId: devices.microphone?.deviceId,
-                ...microphoneConstraints,
+                ...appState.media.constraints.microphone,
               }
             : undefined,
       }),
@@ -293,17 +290,14 @@ export const createMediaSelectionDialog = () => {
 
   const {
     open: openMicrophoneConstraintsDialog,
-    Component: MicrophoneConstraintsDialog,
   } = createPresetMicrophoneConstraintsDialog();
 
   const {
     open: openSpeakerConstraintsDialog,
-    Component: SpeakerConstraintsDialog,
   } = createPresetSpeakerTrackConstraintsDialog();
 
   const {
     open: openVideoConstraintsDialog,
-    Component: VideoConstraintsDialog,
   } = createPresetVideoConstraintsDialog();
 
   const requestMicrophonePermission = async () => {
@@ -350,7 +344,7 @@ export const createMediaSelectionDialog = () => {
     });
   };
 
-  const { open, close, Component, submit } =
+  const { open, close, submit } =
     createDialog<MediaStream>({
       title: () => t("common.media_selection_dialog.title"),
       content: () => (
@@ -359,9 +353,6 @@ export const createMediaSelectionDialog = () => {
           onChange={(value) => setSelectedTab(value)}
           class="flex flex-col gap-2 overflow-y-auto"
         >
-          <MicrophoneConstraintsDialog />
-          <SpeakerConstraintsDialog />
-          <VideoConstraintsDialog />
           <TabsList>
             <TabsTrigger value="screen" class="gap-1">
               <IconMonitor class="size-4" />
@@ -888,5 +879,5 @@ export const createMediaSelectionDialog = () => {
       },
     });
 
-  return { open, close, Component };
+  return { open, close };
 };

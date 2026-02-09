@@ -21,7 +21,7 @@ export const PortableContextMenu: Component<
   PortableContextMenuProps
 > = (props) => {
   const isMobile = createIsMobile();
-  const { open, close, Component } = createDrawer({
+  const { open, close } = createDrawer({
     content: () => (
       <div class="mx-4 mb-8">
         <ContextMenu>
@@ -53,7 +53,6 @@ export const PortableContextMenu: Component<
           open();
         }}
       />
-      <Component />
     </Show>
   );
 };

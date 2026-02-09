@@ -24,9 +24,9 @@ import {
   JoinRoomButton,
   createRoomDialog,
   joinUrl,
-} from "./components/join-dialog";
+} from "./components/dialogs/join-dialog";
 import { toast } from "solid-sonner";
-import createAboutDialog from "./components/app/about-dialog";
+import createAboutDialog from "./components/dialogs/about-dialog";
 import {
   appInitialized,
   backgroundImage,
@@ -40,8 +40,8 @@ import {
 } from "./options";
 import { MetaProvider, Style } from "@solidjs/meta";
 import { produce } from "solid-js/store";
-import { createQRCodeDialog } from "./components/create-qrcode-dialog";
-import { createForwardDialog } from "./components/forward-dialog";
+import { createQRCodeDialog } from "./components/dialogs/create-qrcode-dialog";
+import { createForwardDialog } from "./components/dialogs/forward-dialog";
 import { createReloadPrompt } from "./libs/hooks/reload-prompt";
 import { catchError } from "./libs/catch";
 import {
@@ -75,25 +75,17 @@ import { AppWakeLock } from "./components/app/wakelock";
 import { createInitialization } from "@/libs/initialization";
 import { appState } from "@/libs/state/app-state";
 import { localStream } from "@/libs/stream";
+import { ModalProvider } from "@/components/dialogs/base";
 
 const InnerApp = (props: ParentProps) => {
   const { joinRoom } = useAppState();
   const [search, setSearch] = useSearchParams();
 
-  const {
-    open: openRoomDialog,
-    Component: RoomDialogComponent,
-  } = createRoomDialog();
+  const { open: openRoomDialog } = createRoomDialog();
 
-  const {
-    open: openQRCodeDialog,
-    Component: QRCodeDialogComponent,
-  } = createQRCodeDialog();
+  const { open: openQRCodeDialog } = createQRCodeDialog();
 
-  const {
-    open: openAboutDialog,
-    Component: AboutDialogComponent,
-  } = createAboutDialog();
+  const { open: openAboutDialog } = createAboutDialog();
 
   const onJoinRoom = async () => {
     if (appState.profile.initalJoin) {
@@ -247,10 +239,8 @@ const InnerApp = (props: ParentProps) => {
 
   createReloadPrompt();
 
-  const {
-    forwardTarget: shareTarget,
-    Component: ForwardDialogComponent,
-  } = createForwardDialog();
+  const { forwardTarget: shareTarget } =
+    createForwardDialog();
 
   if (navigator.serviceWorker) {
     onMount(() => {
@@ -276,10 +266,6 @@ const InnerApp = (props: ParentProps) => {
 
   return (
     <>
-      <RoomDialogComponent />
-      <QRCodeDialogComponent />
-      <AboutDialogComponent />
-      <ForwardDialogComponent />
       <AppWakeLock enabled={appState.options.wakeLock} />
 
       <div class="flex h-full min-h-full w-full flex-col md:flex-row">
@@ -496,9 +482,11 @@ export default function App(props: RouteSectionProps) {
         </Style>
         <Toaster />
         <AppStateProvider localStream={localStream()}>
-          <AudioPlayerProvider>
-            <InnerApp>{props.children}</InnerApp>
-          </AudioPlayerProvider>
+          <ModalProvider>
+            <AudioPlayerProvider>
+              <InnerApp>{props.children}</InnerApp>
+            </AudioPlayerProvider>
+          </ModalProvider>
         </AppStateProvider>
       </MetaProvider>
     </>

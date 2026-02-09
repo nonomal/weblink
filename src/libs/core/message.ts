@@ -3,7 +3,6 @@ import {
   reconcile,
   SetStoreFunction,
 } from "solid-js/store";
-import { ChunkRange } from "../utils/range";
 import { ClientID, FileID, Client } from "./type";
 import {
   FileTransferer,
@@ -12,19 +11,17 @@ import {
 } from "./file-transferer";
 import { ChunkCache } from "../cache/chunk-cache";
 import type { Accessor } from "solid-js";
-import { ChunkMetaData } from "../cache";
+import type {
+  AckMessage,
+  BaseExchangeMessage,
+  ErrorMessage,
+  MessageID,
+  RequestFileMessage,
+  SendFileMessage,
+  SendTextMessage,
+  SessionMessage,
+} from "@/libs/services/rtc-protocol";
 import { appState, setAppState } from "@/libs/state/app-state";
-
-export type MessageID = string;
-
-export interface BaseExchangeMessage {
-  id: MessageID;
-  type: string;
-  createdAt: number;
-  client: ClientID;
-  target: ClientID;
-  status?: "sending" | "received" | "error";
-}
 
 export interface BaseStorageMessage
   extends BaseExchangeMessage {
@@ -63,86 +60,438 @@ export type StoreMessage =
   | TextMessage
   | FileTransferMessage;
 
-export type SendTextMessage = BaseExchangeMessage & {
-  type: "send-text";
-  data: string;
-};
-
-export type CheckMessage = BaseExchangeMessage & {
-  type: "check-message";
-  mode: "send" | "receive";
-  id: MessageID;
-};
-
-export type ReadTextMessage = BaseExchangeMessage & {
-  type: "read-text";
-  id: MessageID;
-};
-
-export type RequestFileMessage = BaseExchangeMessage & {
-  type: "request-file";
-  fid: FileID;
-  ranges?: ChunkRange[];
-  fileName: string;
-  fileSize: number;
-  mimeType?: string;
-  lastModified?: number;
-  chunkSize: number;
-  resume: boolean;
-};
-
-export type ResumeFileMessage = BaseExchangeMessage & {
-  type: "resume-file";
-  fid: FileID;
-};
-
-export type SendFileMessage = BaseExchangeMessage & {
-  type: "send-file";
-  fid: FileID;
-  fileName: string;
-  fileSize: number;
-  mimeType?: string;
-  lastModified?: number;
-  chunkSize: number;
-};
-
-export type SendClipboardMessage = BaseExchangeMessage & {
-  type: "send-clipboard";
-  data: string;
-};
-
-export type ErrorMessage = BaseExchangeMessage & {
-  type: "error";
-  fid?: FileID;
-  error: string;
-};
-
-export type StorageMessage = BaseExchangeMessage & {
-  type: "storage";
-  data: ChunkMetaData[];
-};
-
-export type RequestStorageMessage = BaseExchangeMessage & {
-  type: "request-storage";
-};
-
-export type SessionMessage =
-  | SendTextMessage
-  | CheckMessage
-  | ReadTextMessage
-  | RequestFileMessage
-  | SendFileMessage
-  | SendClipboardMessage
-  | ErrorMessage
-  | StorageMessage
-  | RequestStorageMessage
-  | ResumeFileMessage;
-
 export type SendMessageOptions = {
   timeoutMs?: number | null;
 };
 
+type SendHandledMessage = Extract<
+  SessionMessage,
+  {
+    type: "send-text" | "send-file" | "request-file";
+  }
+>;
+
+type ReceiveHandledMessage = Extract<
+  SessionMessage,
+  {
+    type:
+      | "send-text"
+      | "send-file"
+      | "request-file"
+      | "error"
+      | "ack";
+  }
+>;
+
+type SendTextHandledMessage = Extract<
+  SendHandledMessage,
+  { type: "send-text" }
+>;
+
+type SendFileHandledMessage = Extract<
+  SendHandledMessage,
+  { type: "send-file" }
+>;
+
+type RequestFileHandledMessage = Extract<
+  SendHandledMessage,
+  { type: "request-file" }
+>;
+
+type ReceiveSendTextHandledMessage = Extract<
+  ReceiveHandledMessage,
+  { type: "send-text" }
+>;
+
+type ReceiveSendFileHandledMessage = Extract<
+  ReceiveHandledMessage,
+  { type: "send-file" }
+>;
+
+type ReceiveRequestFileHandledMessage = Extract<
+  ReceiveHandledMessage,
+  { type: "request-file" }
+>;
+
+type ReceiveErrorHandledMessage = Extract<
+  ReceiveHandledMessage,
+  { type: "error" }
+>;
+
+type ReceiveAckHandledMessage = Extract<
+  ReceiveHandledMessage,
+  { type: "ack" }
+>;
+
+type SendDispatchContext = {
+  self: MessageStores;
+  pushIfMissing: (message: StoreMessage) => void;
+};
+
+type RetryDispatchContext = {
+  self: MessageStores;
+  index: number;
+  resetTimeout: (messageId: MessageID) => void;
+};
+
+type ReceiveDispatchContext = {
+  self: MessageStores;
+  getIndex: () => number;
+  pushIfMissing: (message: StoreMessage) => void;
+  setStatus: (index: number) => void;
+};
+
 class MessageStores {
+  private static createTextMessage(
+    message: SendTextHandledMessage,
+    status: "sending" | "received",
+  ) {
+    return {
+      ...message,
+      type: "text",
+      status,
+    } satisfies TextMessage;
+  }
+
+  private static createFileMessageFromSendFile(
+    message: SendFileHandledMessage,
+    status: "sending" | "received",
+  ) {
+    return {
+      ...message,
+      type: "file",
+      status,
+    } satisfies FileTransferMessage;
+  }
+
+  private static createFileMessageFromRequestFile(
+    message: RequestFileHandledMessage,
+    status: "sending" | "received",
+  ) {
+    return {
+      id: message.id,
+      type: "file",
+      status,
+      fid: message.fid,
+      fileName: message.fileName,
+      fileSize: message.fileSize,
+      mimeType: message.mimeType,
+      lastModified: message.lastModified,
+      chunkSize: message.chunkSize,
+      createdAt: message.createdAt,
+      client: message.target,
+      target: message.client,
+      transferStatus: "init",
+    } satisfies FileTransferMessage;
+  }
+
+  private static handleSendTextMessage(
+    { pushIfMissing }: SendDispatchContext,
+    message: SendTextHandledMessage,
+  ) {
+    pushIfMissing(
+      MessageStores.createTextMessage(message, "sending"),
+    );
+  }
+
+  private static handleSendFileMessage(
+    { pushIfMissing }: SendDispatchContext,
+    message: SendFileHandledMessage,
+  ) {
+    pushIfMissing(
+      MessageStores.createFileMessageFromSendFile(
+        message,
+        "sending",
+      ),
+    );
+  }
+
+  private static handleSendRequestFileMessage(
+    { pushIfMissing }: SendDispatchContext,
+    message: RequestFileHandledMessage,
+  ) {
+    pushIfMissing(
+      MessageStores.createFileMessageFromRequestFile(
+        message,
+        "sending",
+      ),
+    );
+  }
+
+  private static handleRetrySendTextMessage(
+    { self, index, resetTimeout }: RetryDispatchContext,
+    message: SendTextHandledMessage,
+  ) {
+    self.setMessages(
+      index,
+      produce((state) => {
+        if (state.type !== "text") return;
+        state.status = "sending";
+        state.error = undefined;
+        state.data = message.data;
+        self.setMessageDB(state);
+      }),
+    );
+    resetTimeout(message.id);
+  }
+
+  private static handleRetrySendFileMessage(
+    { self, index, resetTimeout }: RetryDispatchContext,
+    message: SendFileHandledMessage,
+  ) {
+    self.setMessages(
+      index,
+      produce((state) => {
+        if (state.type !== "file") return;
+        state.status = "sending";
+        state.error = undefined;
+        state.fid = message.fid;
+        state.fileName = message.fileName;
+        state.fileSize = message.fileSize;
+        state.mimeType = message.mimeType;
+        state.lastModified = message.lastModified;
+        state.chunkSize = message.chunkSize;
+        self.setMessageDB(state);
+      }),
+    );
+    resetTimeout(message.id);
+  }
+
+  private static handleRetryRequestFileMessage(
+    { self, index, resetTimeout }: RetryDispatchContext,
+    message: RequestFileHandledMessage,
+  ) {
+    self.setMessages(
+      index,
+      produce((state) => {
+        if (state.type !== "file") return;
+        state.status = "sending";
+        state.error = undefined;
+        state.fid = message.fid;
+        state.fileName = message.fileName;
+        state.fileSize = message.fileSize;
+        state.mimeType = message.mimeType;
+        state.lastModified = message.lastModified;
+        state.chunkSize = message.chunkSize;
+        state.transferStatus = "init";
+        self.setMessageDB(state);
+      }),
+    );
+    resetTimeout(message.id);
+  }
+
+  private static handleReceiveSendTextMessage(
+    { pushIfMissing, setStatus, getIndex }: ReceiveDispatchContext,
+    message: ReceiveSendTextHandledMessage,
+  ) {
+    pushIfMissing(
+      MessageStores.createTextMessage(message, "received"),
+    );
+    setStatus(getIndex());
+  }
+
+  private static handleReceiveSendFileMessage(
+    { pushIfMissing, setStatus, getIndex }: ReceiveDispatchContext,
+    message: ReceiveSendFileHandledMessage,
+  ) {
+    pushIfMissing(
+      MessageStores.createFileMessageFromSendFile(
+        message,
+        "received",
+      ),
+    );
+    setStatus(getIndex());
+  }
+
+  private static handleReceiveRequestFileMessage(
+    { pushIfMissing }: ReceiveDispatchContext,
+    message: ReceiveRequestFileHandledMessage,
+  ) {
+    pushIfMissing(
+      MessageStores.createFileMessageFromRequestFile(
+        message,
+        "received",
+      ),
+    );
+  }
+
+  private static handleReceiveErrorMessage(
+    { self, getIndex }: ReceiveDispatchContext,
+    message: ReceiveErrorHandledMessage,
+  ) {
+    self.clearTimeout(message.id);
+    self.setMessages(
+      getIndex(),
+      produce((state) => {
+        state.status = "error";
+        state.error = message.error;
+        self.setMessageDB(state);
+      }),
+    );
+  }
+
+  private static handleReceiveAckMessage(
+    { self, getIndex }: ReceiveDispatchContext,
+    message: ReceiveAckHandledMessage,
+  ) {
+    const index = getIndex();
+    if (index === -1) return;
+    self.clearTimeout(message.id);
+    self.setMessages(
+      index,
+      produce((state) => {
+        state.status = "received";
+        state.error = undefined;
+        self.setMessageDB(state);
+      }),
+    );
+  }
+
+  private static readonly dbRequestFactoryByType = new Map<
+    StoreMessage["type"],
+    (
+      db: IDBDatabase,
+      message: StoreMessage,
+    ) => IDBRequest<IDBValidKey>
+  >([
+    [
+      "text",
+      (db, message) =>
+        db
+          .transaction("messages", "readwrite")
+          .objectStore("messages")
+          .put({
+            ...message,
+          }),
+    ],
+    [
+      "file",
+      (db, message) => {
+        const { progress, ...storeMessage } =
+          message as FileTransferMessage;
+        return db
+          .transaction("messages", "readwrite")
+          .objectStore("messages")
+          .put(storeMessage);
+      },
+    ],
+  ]);
+
+  private static readonly sendMessageHandlers = new Map<
+    SendHandledMessage["type"],
+    (
+      ctx: SendDispatchContext,
+      message: SendHandledMessage,
+    ) => void
+  >([
+    [
+      "send-text",
+      (ctx, message) =>
+        MessageStores.handleSendTextMessage(
+          ctx,
+          message as SendTextHandledMessage,
+        ),
+    ],
+    [
+      "send-file",
+      (ctx, message) =>
+        MessageStores.handleSendFileMessage(
+          ctx,
+          message as SendFileHandledMessage,
+        ),
+    ],
+    [
+      "request-file",
+      (ctx, message) =>
+        MessageStores.handleSendRequestFileMessage(
+          ctx,
+          message as RequestFileHandledMessage,
+        ),
+    ],
+  ]);
+
+  private static readonly retrySendHandlers = new Map<
+    SendHandledMessage["type"],
+    (
+      ctx: RetryDispatchContext,
+      message: SendHandledMessage,
+    ) => void
+  >([
+    [
+      "send-text",
+      (ctx, message) =>
+        MessageStores.handleRetrySendTextMessage(
+          ctx,
+          message as SendTextHandledMessage,
+        ),
+    ],
+    [
+      "send-file",
+      (ctx, message) =>
+        MessageStores.handleRetrySendFileMessage(
+          ctx,
+          message as SendFileHandledMessage,
+        ),
+    ],
+    [
+      "request-file",
+      (ctx, message) =>
+        MessageStores.handleRetryRequestFileMessage(
+          ctx,
+          message as RequestFileHandledMessage,
+        ),
+    ],
+  ]);
+
+  private static readonly receiveHandlers = new Map<
+    ReceiveHandledMessage["type"],
+    (
+      ctx: ReceiveDispatchContext,
+      message: ReceiveHandledMessage,
+    ) => void
+  >([
+    [
+      "send-text",
+      (ctx, message) =>
+        MessageStores.handleReceiveSendTextMessage(
+          ctx,
+          message as ReceiveSendTextHandledMessage,
+        ),
+    ],
+    [
+      "send-file",
+      (ctx, message) =>
+        MessageStores.handleReceiveSendFileMessage(
+          ctx,
+          message as ReceiveSendFileHandledMessage,
+        ),
+    ],
+    [
+      "request-file",
+      (ctx, message) =>
+        MessageStores.handleReceiveRequestFileMessage(
+          ctx,
+          message as ReceiveRequestFileHandledMessage,
+        ),
+    ],
+    [
+      "error",
+      (ctx, message) =>
+        MessageStores.handleReceiveErrorMessage(
+          ctx,
+          message as ReceiveErrorHandledMessage,
+        ),
+    ],
+    [
+      "ack",
+      (ctx, message) =>
+        MessageStores.handleReceiveAckMessage(
+          ctx,
+          message as ReceiveAckHandledMessage,
+        ),
+    ],
+  ]);
+
   readonly messages: StoreMessage[] = appState.message.messages;
   readonly clients: Client[] = appState.message.clients;
   readonly db: Promise<IDBDatabase> | IDBDatabase;
@@ -272,22 +621,18 @@ class MessageStores {
 
   private async setMessageDB(message: StoreMessage) {
     const db = await this.db;
-    let request: IDBRequest<IDBValidKey>;
     return new Promise((resolve, reject) => {
-      if (message.type === "text") {
-        request = db
-          .transaction("messages", "readwrite")
-          .objectStore("messages")
-          .put({
-            ...message,
-          });
-      } else if (message.type === "file") {
-        const { progress, ...storeMessage } = message;
-
-        request = db
-          .transaction("messages", "readwrite")
-          .objectStore("messages")
-          .put(storeMessage);
+      const requestFactory =
+        MessageStores.dbRequestFactoryByType.get(message.type);
+      const request =
+        requestFactory?.(db, message);
+      if (!request) {
+        reject(
+          new Error(
+            `unsupported message type: ${message.type}`,
+          ),
+        );
+        return;
       }
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
@@ -403,62 +748,29 @@ class MessageStores {
         this.setMessageDB(this.messages[index]);
       });
     };
-    if (sessionMsg.type === "send-text") {
-      if (index === -1) {
-        const message = {
-          ...sessionMsg,
-          type: "text",
-          status: "sending",
-        } satisfies TextMessage;
-        this.setMessages(
-          produce((state) => {
-            index = state.push(message) - 1;
-            this.setMessageDB(message);
-            setStatus(message);
-          }),
-        );
-      }
-    } else if (sessionMsg.type === "send-file") {
-      if (index === -1) {
-        const message = {
-          ...sessionMsg,
-          type: "file",
-          status: "sending",
-        } satisfies FileTransferMessage;
-        this.setMessages(
-          produce((state) => {
-            index = state.push(message) - 1;
-            this.setMessageDB(message);
-            setStatus(message);
-          }),
-        );
-      }
-    } else if (sessionMsg.type === "request-file") {
-      if (index === -1) {
-        const message = {
-          id: sessionMsg.id,
-          type: "file",
-          status: "sending",
-          fid: sessionMsg.fid,
-          fileName: sessionMsg.fileName,
-          fileSize: sessionMsg.fileSize,
-          mimeType: sessionMsg.mimeType,
-          lastModified: sessionMsg.lastModified,
-          chunkSize: sessionMsg.chunkSize,
-          createdAt: sessionMsg.createdAt,
-          client: sessionMsg.target,
-          target: sessionMsg.client,
-          transferStatus: "init",
-        } satisfies FileTransferMessage;
-        this.setMessages(
-          produce((state) => {
-            index = state.push(message) - 1;
-            this.setMessageDB(message);
-            setStatus(message);
-          }),
-        );
-      }
-    }
+
+    const pushIfMissing = (message: StoreMessage) => {
+      if (index !== -1) return;
+      this.setMessages(
+        produce((state) => {
+          index = state.push(message) - 1;
+          this.setMessageDB(message);
+          setStatus(message);
+        }),
+      );
+    };
+
+    const sendHandler = MessageStores.sendMessageHandlers.get(
+      sessionMsg.type as SendHandledMessage["type"],
+    );
+    if (!sendHandler) return;
+    sendHandler(
+      {
+        self: this,
+        pushIfMissing,
+      },
+      sessionMsg as SendHandledMessage,
+    );
   }
 
   retrySendMessage(
@@ -491,54 +803,18 @@ class MessageStores {
       });
     };
 
-    if (sessionMsg.type === "send-text") {
-      this.setMessages(
+    const retryHandler = MessageStores.retrySendHandlers.get(
+      sessionMsg.type as SendHandledMessage["type"],
+    );
+    if (!retryHandler) return;
+    retryHandler(
+      {
+        self: this,
         index,
-        produce((state) => {
-          if (state.type !== "text") return;
-          state.status = "sending";
-          state.error = undefined;
-          state.data = sessionMsg.data;
-          this.setMessageDB(state);
-        }),
-      );
-      resetTimeout(sessionMsg.id);
-    } else if (sessionMsg.type === "send-file") {
-      this.setMessages(
-        index,
-        produce((state) => {
-          if (state.type !== "file") return;
-          state.status = "sending";
-          state.error = undefined;
-          state.fid = sessionMsg.fid;
-          state.fileName = sessionMsg.fileName;
-          state.fileSize = sessionMsg.fileSize;
-          state.mimeType = sessionMsg.mimeType;
-          state.lastModified = sessionMsg.lastModified;
-          state.chunkSize = sessionMsg.chunkSize;
-          this.setMessageDB(state);
-        }),
-      );
-      resetTimeout(sessionMsg.id);
-    } else if (sessionMsg.type === "request-file") {
-      this.setMessages(
-        index,
-        produce((state) => {
-          if (state.type !== "file") return;
-          state.status = "sending";
-          state.error = undefined;
-          state.fid = sessionMsg.fid;
-          state.fileName = sessionMsg.fileName;
-          state.fileSize = sessionMsg.fileSize;
-          state.mimeType = sessionMsg.mimeType;
-          state.lastModified = sessionMsg.lastModified;
-          state.chunkSize = sessionMsg.chunkSize;
-          state.transferStatus = "init";
-          this.setMessageDB(state);
-        }),
-      );
-      resetTimeout(sessionMsg.id);
-    }
+        resetTimeout,
+      },
+      sessionMsg as SendHandledMessage,
+    );
   }
 
   setReceiveMessage(sessionMsg: SessionMessage) {
@@ -551,83 +827,29 @@ class MessageStores {
       this.setMessageDB(this.messages[index]);
     };
 
-    if (sessionMsg.type === "send-text") {
-      if (index === -1) {
-        const message = {
-          ...sessionMsg,
-          type: "text",
-          status: "received",
-        } satisfies TextMessage;
-        this.setMessages(
-          produce((state) => {
-            index = state.push(message) - 1;
-            this.setMessageDB(message);
-          }),
-        );
-      }
-      setStatus(index);
-    } else if (sessionMsg.type === "send-file") {
-      if (index === -1) {
-        const message = {
-          ...sessionMsg,
-          type: "file",
-          status: "received",
-        } satisfies FileTransferMessage;
-        this.setMessages(
-          produce((state) => {
-            index = state.push(message) - 1;
-            this.setMessageDB(message);
-          }),
-        );
-      }
-      setStatus(index);
-    } else if (sessionMsg.type === "request-file") {
-      if (index === -1) {
-        const message = {
-          id: sessionMsg.id,
-          type: "file",
-          status: "received",
-          fid: sessionMsg.fid,
-          fileName: sessionMsg.fileName,
-          fileSize: sessionMsg.fileSize,
-          mimeType: sessionMsg.mimeType,
-          lastModified: sessionMsg.lastModified,
-          chunkSize: sessionMsg.chunkSize,
-          createdAt: sessionMsg.createdAt,
-          client: sessionMsg.target,
-          target: sessionMsg.client,
-          transferStatus: "init",
-        } satisfies FileTransferMessage;
-        this.setMessages(
-          produce((state) => {
-            index = state.push(message) - 1;
-            this.setMessageDB(message);
-          }),
-        );
-      }
-    } else if (sessionMsg.type === "error") {
-      this.clearTimeout(sessionMsg.id);
+    const pushIfMissing = (message: StoreMessage) => {
+      if (index !== -1) return;
       this.setMessages(
-        index,
         produce((state) => {
-          state.status = "error";
-          state.error = sessionMsg.error;
-          this.setMessageDB(state);
+          index = state.push(message) - 1;
+          this.setMessageDB(message);
         }),
       );
-    } else if (sessionMsg.type === "check-message") {
-      if (index !== -1) {
-        this.clearTimeout(sessionMsg.id);
-        this.setMessages(
-          index,
-          produce((state) => {
-            state.status = "received";
-            state.error = undefined;
-            this.setMessageDB(state);
-          }),
-        );
-      }
-    }
+    };
+
+    const receiveHandler = MessageStores.receiveHandlers.get(
+      sessionMsg.type as ReceiveHandledMessage["type"],
+    );
+    if (!receiveHandler) return;
+    receiveHandler(
+      {
+        self: this,
+        getIndex: () => index,
+        pushIfMissing,
+        setStatus,
+      },
+      sessionMsg as ReceiveHandledMessage,
+    );
   }
 
   async addMessage(message: StoreMessage) {

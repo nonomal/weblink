@@ -36,7 +36,7 @@ import {
   IconVideoFileFilled,
 } from "@/components/icons";
 
-import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
+import { createComfirmDeleteClientDialog } from "@/components/dialogs/confirm-delete-client-dialog";
 import { t } from "@/i18n";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { getInitials } from "@/libs/utils/name";
@@ -92,13 +92,10 @@ export const UserItem: Component<UserItemProps> = (
 
   const {
     open: openConfirmDeleteClientDialog,
-    Component: ConfirmDeleteClientDialog,
   } = createComfirmDeleteClientDialog();
 
   return (
-    <>
-      <ConfirmDeleteClientDialog />
-      <PortableContextMenu
+    <PortableContextMenu
         menu={(close) => (
           <ContextMenuGroup>
             <ContextMenuGroupLabel>
@@ -195,6 +192,5 @@ export const UserItem: Component<UserItemProps> = (
           </li>
         )}
       </PortableContextMenu>
-    </>
   );
 };

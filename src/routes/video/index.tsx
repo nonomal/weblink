@@ -36,8 +36,8 @@ import { cn } from "@/libs/cn";
 import { ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { Dynamic } from "solid-js/web";
-import { createMediaSelectionDialog } from "./components/media-selection-dialog";
-import { createApplyConstraintsDialog } from "./components/track-constaints";
+import { createMediaSelectionDialog } from "@/components/dialogs/media-selection-dialog";
+import { createApplyConstraintsDialog } from "@/components/dialogs/media-constraints-dialogs";
 import { useAudioPlayer } from "./components/audio-player";
 import {
   useVideoDisplay,
@@ -391,6 +391,10 @@ export default function Video() {
                       stream={client.stream}
                       name={client.name}
                       avatar={client.avatar ?? undefined}
+                      isPlaceholderStream={
+                        client.streamState === "placeholder"
+                      }
+                      hidePlaceholderVideo
                       muted={true}
                     >
                       <RemoteToolbar
@@ -548,12 +552,10 @@ const LocalToolbar = (props: {
 
   const {
     open: openMediaSelection,
-    Component: MediaSelectionDialogComponent,
   } = createMediaSelectionDialog();
 
   const {
     open: openApplyConstraintsDialog,
-    Component: ApplyConstraintsDialogComponent,
   } = createApplyConstraintsDialog();
 
   const tracks = createMediaTracks(
@@ -628,8 +630,6 @@ const LocalToolbar = (props: {
         props.class,
       )}
     >
-      <MediaSelectionDialogComponent />
-      <ApplyConstraintsDialogComponent />
       <FlexButton
         size="sm"
         onClick={async () => {

@@ -45,6 +45,8 @@ export const VideoDisplay = (
     name: string;
     muted?: boolean;
     avatar?: string;
+    hidePlaceholderVideo?: boolean;
+    isPlaceholderStream?: boolean;
     onLoadingStateChange?: (
       state:
         | "initial"
@@ -60,6 +62,53 @@ export const VideoDisplay = (
   const stream = createMemo(() => props.stream ?? null);
 
   const tracks = createMediaTracks(stream);
+
+  const isPlaceholderVideoTrack = (
+    track: MediaStreamTrack,
+  ) => {
+    if (track.kind !== "video") return false;
+    const label = track.label.trim().toLowerCase();
+    if (
+      label.includes("canvas") ||
+      label.includes("offscreen")
+    ) {
+      return true;
+    }
+
+    const settings = track.getSettings?.() ?? {};
+    const width = settings.width;
+    const height = settings.height;
+    const frameRate = settings.frameRate;
+
+    if (
+      typeof width === "number" &&
+      typeof height === "number"
+    ) {
+      const tinyResolution = width <= 16 && height <= 16;
+      const lowFrameRate =
+        typeof frameRate !== "number" || frameRate <= 1.5;
+      return tinyResolution && lowFrameRate;
+    }
+
+    if (
+      typeof frameRate === "number" &&
+      frameRate > 0 &&
+      frameRate <= 1.5
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const visibleTracks = createMemo(() => {
+    if (props.isPlaceholderStream) {
+      return tracks().filter((track) => track.kind !== "video");
+    }
+    if (!props.hidePlaceholderVideo) return tracks();
+    return tracks().filter((track) => {
+      return !isPlaceholderVideoTrack(track);
+    });
+  });
 
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [loadingState, setLoadingState] = createSignal<
@@ -79,7 +128,9 @@ export const VideoDisplay = (
   });
 
   const audioTracks = createMemo(() =>
-    tracks().filter((track) => track.kind === "audio"),
+    visibleTracks().filter(
+      (track) => track.kind === "audio",
+    ),
   );
 
   const speaking = createMemo(() => {
@@ -96,8 +147,9 @@ export const VideoDisplay = (
 
   const videoTrack = createMemo(
     () =>
-      tracks().find((track) => track.kind === "video") ??
-      null,
+      visibleTracks().find(
+        (track) => track.kind === "video",
+      ) ?? null,
   );
 
   const videoStream = createMemo(() => {

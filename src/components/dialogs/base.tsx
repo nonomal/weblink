@@ -1,5 +1,13 @@
 import { cn } from "@/libs/cn";
-import { Component, createSignal, JSX } from "solid-js";
+import {
+  Component,
+  createSignal,
+  For,
+  getOwner,
+  JSX,
+  onCleanup,
+  ParentProps,
+} from "solid-js";
 
 export interface ModalOptions<T extends any> {
   title?: () => JSX.Element;
@@ -28,6 +36,54 @@ export interface BaseModalProps<T extends any> {
   onSubmit?: (data: T) => void;
   onCancel?: () => void;
 }
+
+type ModalRenderer = {
+  id: number;
+  render: () => JSX.Element;
+};
+
+const [modalRenderers, setModalRenderers] = createSignal<
+  ModalRenderer[]
+>([]);
+let modalRendererId = 0;
+
+export const mountModalRenderer = (
+  render: () => JSX.Element,
+) => {
+  const id = ++modalRendererId;
+  setModalRenderers((prev) => [
+    ...prev,
+    {
+      id,
+      render,
+    },
+  ]);
+
+  const unmount = () => {
+    setModalRenderers((prev) =>
+      prev.filter((modal) => modal.id !== id),
+    );
+  };
+
+  if (getOwner()) {
+    onCleanup(unmount);
+  }
+
+  return unmount;
+};
+
+export const ModalProvider: Component<ParentProps> = (
+  props,
+) => {
+  return (
+    <>
+      {props.children}
+      <For each={modalRenderers()}>
+        {(modal) => modal.render()}
+      </For>
+    </>
+  );
+};
 
 export const createModal = <T extends any>(
   options: ModalOptions<T>,
@@ -90,10 +146,11 @@ export const createModal = <T extends any>(
     );
   };
 
+  mountModalRenderer(() => <ModalComponent />);
+
   return {
     open,
     close,
     submit,
-    Component: ModalComponent,
   };
 };

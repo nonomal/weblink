@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { createDialog } from "../dialogs/dialog";
+import { createDialog } from "./dialog";
 import { t } from "@/i18n";
 import { createSignal } from "solid-js";
 
@@ -9,7 +9,6 @@ export const createComfirmDeleteClientDialog = () => {
     open: openDialog,
     close,
     submit,
-    Component,
   } = createDialog({
     title: () =>
       t("common.confirm_delete_client_dialog.title"),
@@ -40,5 +39,5 @@ export const createComfirmDeleteClientDialog = () => {
     return await openDialog();
   };
 
-  return { open, Component };
+  return { open };
 };

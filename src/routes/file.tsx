@@ -76,7 +76,7 @@ import {
   IconWallpaper,
 } from "@/components/icons";
 import { t } from "@/i18n";
-import { createPreviewDialog } from "@/components/preview-dialog";
+import { createPreviewDialog } from "@/components/dialogs/preview-dialog";
 import {
   createElementSize,
   Size,
@@ -84,7 +84,7 @@ import {
 import { createStore } from "solid-js/store";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { setAppOptions } from "@/options";
-import { createForwardDialog } from "@/components/forward-dialog";
+import { createForwardDialog } from "@/components/dialogs/forward-dialog";
 import { FileMetaData } from "@/libs/cache";
 import { downloadFile } from "@/libs/utils/download-file";
 import DataTableColumnVisibility from "@/components/data-table/data-table-column-visibility";
@@ -96,7 +96,7 @@ import {
   handleSelectFolder,
 } from "@/libs/utils/process-file";
 import DropArea from "@/components/drop-area";
-import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dialog";
+import { createComfirmDeleteItemsDialog } from "@/components/dialogs/confirm-delete-items-dialog";
 import { Badge } from "@/components/ui/badge";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { toast } from "solid-sonner";
@@ -147,10 +147,8 @@ const StorageStatus = (props: { class?: string }) => {
 };
 
 export default function File() {
-  const {
-    open: openPreviewDialog,
-    Component: PreviewDialogComponent,
-  } = createPreviewDialog();
+  const { open: openPreviewDialog } =
+    createPreviewDialog();
 
   onMount(() => {
     reset();
@@ -174,10 +172,8 @@ export default function File() {
         };
   };
 
-  const {
-    forwardCache: shareCache,
-    Component: ForwardDialogComponent,
-  } = createForwardDialog();
+  const { forwardCache: shareCache } =
+    createForwardDialog();
 
   const columns = [
     columnHelper.display({
@@ -583,16 +579,10 @@ export default function File() {
     Size[]
   >([]);
 
-  const {
-    open: openDeleteDialog,
-    Component: DeleteDialogComponent,
-  } = createComfirmDeleteItemsDialog();
+  const { open: openDeleteDialog } =
+    createComfirmDeleteItemsDialog();
   return (
     <>
-      <DeleteDialogComponent />
-      <PreviewDialogComponent />
-      <ForwardDialogComponent />
-
       <div
         class="bg-background/80 z-[10] container flex h-full
           min-h-[calc(100%-3rem)] w-full flex-col gap-4 px-0 pt-4"

@@ -42,6 +42,9 @@ import { ChatMoreMessageButton } from "./components/chat-more-message-button";
 import { MessageContent } from "./components/message";
 import { ChatHeader } from "./components/chat-header";
 import { appState } from "@/libs/state/app-state";
+import { transferManager } from "@/libs/services/transfer-service";
+import { cacheManager } from "@/libs/services/cache-serivce";
+import { createDeleteFileMessageDialog } from "@/components/dialogs/delete-file-message-dialog";
 
 export default function ClientPage(
   props: RouteSectionProps,
@@ -184,6 +187,8 @@ export default function ClientPage(
   const [bottomElem, setBottomElem] =
     createSignal<HTMLElement>();
   const size = createElementSize(bottomElem);
+  const { open: openDeleteFileMessageDialog } =
+    createDeleteFileMessageDialog();
 
   const session = createMemo<PeerSession | null>(
     () =>
@@ -221,6 +226,47 @@ export default function ClientPage(
   });
 
   let loadedTimer: number | undefined;
+
+  const deleteMessage = async (message: StoreMessage) => {
+    if (message.type === "file") {
+      const fid = message.fid;
+      const hasTransfer =
+        fid !== undefined &&
+        appState.transfer.transferers[fid] !== undefined;
+      const hasCache =
+        fid !== undefined &&
+        appState.cache.caches[fid] !== undefined;
+
+      const { result, cancel } =
+        await openDeleteFileMessageDialog({
+          fileName: message.fileName,
+          hasTransfer,
+          hasCache,
+        });
+
+      if (cancel) return;
+
+      if (fid !== undefined && result?.deleteTransfer) {
+        transferManager.destroyTransfer(fid);
+      }
+
+      if (fid !== undefined && result?.deleteCache) {
+        const [error] = await catchError(
+          cacheManager.remove(fid),
+        );
+        if (error) {
+          console.error(error);
+          toast.error(error.message);
+        }
+      }
+    }
+
+    if (messageStores.deleteMessage(message.id)) {
+      setMessages(
+        messages().filter((m) => m.id !== message.id),
+      );
+    }
+  };
 
   return (
     <div class="flex h-full w-full flex-col">
@@ -425,20 +471,7 @@ export default function ClientPage(
                     <MessageContent
                       message={message}
                       onDelete={() => {
-                        console.log(
-                          `delete message ${message.id}`,
-                        );
-                        if (
-                          messageStores.deleteMessage(
-                            message.id,
-                          )
-                        ) {
-                          setMessages(
-                            messages().filter(
-                              (m) => m.id !== message.id,
-                            ),
-                          );
-                        }
+                        void deleteMessage(message);
                       }}
                       onLoad={() => {
                         clearTimeout(loadedTimer);

@@ -22,10 +22,221 @@ export type ClientServiceStatus =
 
 export type CacheStatus = "ready" | "loading";
 
+export type MicrophoneConstraintsState = {
+  autoGainControl?: boolean;
+  echoCancellation?: boolean;
+  noiseSuppression?: boolean;
+  voiceIsolation?: boolean;
+};
+
+export type SpeakerConstraintsState = {
+  suppressLocalAudioPlayback?: boolean;
+  echoCancellation?: boolean;
+  noiseSuppression?: boolean;
+  autoGainControl?: boolean;
+  latency?: ConstrainDouble;
+};
+
+export type VideoConstraintsState = {
+  frameRate?: ConstrainDouble;
+};
+
+export type MediaConstraintsState = {
+  microphone: MicrophoneConstraintsState;
+  speaker: SpeakerConstraintsState;
+  video: VideoConstraintsState;
+};
+
+const mediaConstraintsStorageKey = "mediaConstraints";
+const legacyMicrophoneConstraintsStorageKey =
+  "microphoneConstraints";
+const legacySpeakerConstraintsStorageKey =
+  "speakerConstraints";
+const legacyVideoConstraintsStorageKey = "videoConstraints";
+
+const getSupportedConstraints = () => {
+  if (
+    typeof navigator === "undefined" ||
+    !("mediaDevices" in navigator)
+  ) {
+    return {};
+  }
+  return navigator.mediaDevices.getSupportedConstraints();
+};
+
+const isObject = (
+  value: unknown,
+): value is Record<string, unknown> => {
+  return (
+    typeof value === "object" && value !== null
+  );
+};
+
+const createDefaultMediaConstraints =
+  (): MediaConstraintsState => {
+    const constraints = getSupportedConstraints();
+
+    return {
+      microphone: {
+        autoGainControl:
+          "autoGainControl" in constraints
+            ? true
+            : undefined,
+        echoCancellation:
+          "echoCancellation" in constraints
+            ? true
+            : undefined,
+        noiseSuppression:
+          "noiseSuppression" in constraints
+            ? true
+            : undefined,
+        voiceIsolation:
+          "voiceIsolation" in constraints
+            ? true
+            : undefined,
+      },
+      speaker: {
+        suppressLocalAudioPlayback:
+          "suppressLocalAudioPlayback" in constraints
+            ? false
+            : undefined,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: true,
+        latency: { ideal: 0, max: 0.01 },
+      },
+      video: {
+        frameRate: { max: 60 },
+      },
+    };
+  };
+
+const loadMediaConstraintsFromSession = (
+  defaults: MediaConstraintsState,
+): MediaConstraintsState => {
+  if (typeof sessionStorage === "undefined") {
+    return defaults;
+  }
+
+  const raw = sessionStorage.getItem(
+    mediaConstraintsStorageKey,
+  );
+  if (!raw) {
+    return loadLegacyMediaConstraintsFromSession(defaults);
+  }
+
+  try {
+    const parsed = JSON.parse(
+      raw,
+    ) as Partial<MediaConstraintsState>;
+
+    const microphone = isObject(parsed.microphone)
+      ? (parsed.microphone as Partial<MicrophoneConstraintsState>)
+      : {};
+    const speaker = isObject(parsed.speaker)
+      ? (parsed.speaker as Partial<SpeakerConstraintsState>)
+      : {};
+    const video = isObject(parsed.video)
+      ? (parsed.video as Partial<VideoConstraintsState>)
+      : {};
+
+    return {
+      microphone: {
+        ...defaults.microphone,
+        ...microphone,
+      },
+      speaker: {
+        ...defaults.speaker,
+        ...speaker,
+      },
+      video: {
+        ...defaults.video,
+        ...video,
+      },
+    };
+  } catch (err) {
+    console.warn(
+      "[AppState] failed to parse media constraints",
+      err,
+    );
+    return defaults;
+  }
+};
+
+const loadLegacyConstraints = <T extends object>(
+  key: string,
+): Partial<T> => {
+  if (typeof sessionStorage === "undefined") {
+    return {};
+  }
+
+  const raw = sessionStorage.getItem(key);
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    return isObject(parsed) ? (parsed as Partial<T>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const loadLegacyMediaConstraintsFromSession = (
+  defaults: MediaConstraintsState,
+): MediaConstraintsState => {
+  const legacyMicrophone = loadLegacyConstraints<MicrophoneConstraintsState>(
+    legacyMicrophoneConstraintsStorageKey,
+  );
+  const legacySpeaker = loadLegacyConstraints<SpeakerConstraintsState>(
+    legacySpeakerConstraintsStorageKey,
+  );
+  const legacyVideo = loadLegacyConstraints<VideoConstraintsState>(
+    legacyVideoConstraintsStorageKey,
+  );
+
+  return {
+    microphone: {
+      ...defaults.microphone,
+      ...legacyMicrophone,
+    },
+    speaker: {
+      ...defaults.speaker,
+      ...legacySpeaker,
+    },
+    video: {
+      ...defaults.video,
+      ...legacyVideo,
+    },
+  };
+};
+
+export const saveMediaConstraintsToSession = (
+  constraints: MediaConstraintsState,
+) => {
+  if (typeof sessionStorage === "undefined") {
+    return;
+  }
+
+  try {
+    sessionStorage.setItem(
+      mediaConstraintsStorageKey,
+      JSON.stringify(constraints),
+    );
+  } catch (err) {
+    console.warn(
+      "[AppState] failed to persist media constraints",
+      err,
+    );
+  }
+};
+
 export type AppState = {
   roomStatus: RoomStatus;
   profile: ClientProfile;
   options: AppOption;
+  media: {
+    constraints: MediaConstraintsState;
+  };
   session: {
     sessions: Record<ClientID, PeerSession>;
     clientViewData: Record<ClientID, ClientInfo>;
@@ -48,6 +259,11 @@ export type AppState = {
 };
 
 export const createInitialAppState = (): AppState => ({
+  media: {
+    constraints: loadMediaConstraintsFromSession(
+      createDefaultMediaConstraints(),
+    ),
+  },
   roomStatus: {
     roomId: null,
     profile: null,

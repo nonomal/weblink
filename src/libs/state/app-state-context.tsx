@@ -22,24 +22,29 @@ import { v4 } from "uuid";
 import { cacheManager } from "@/libs/services/cache-serivce";
 import { transferManager } from "@/libs/services/transfer-service";
 import { getRangesLength } from "@/libs/utils/range";
-import { appState, setAppState } from "@/libs/state/app-state";
+import {
+  appState,
+  saveMediaConstraintsToSession,
+  setAppState,
+} from "@/libs/state/app-state";
 import { createRtcService } from "@/libs/services/rtc-service";
-import { createRtcProtocol } from "@/libs/services/rtc-protocol";
+import {
+  createRtcProtocol,
+  protocolMessageFactory,
+  type RtcProtocolRequestError,
+  type RtcProtocolRequestResult,
+  type AckMessage,
+  type RequestFileMessage,
+  type SendClipboardMessage,
+  type SendFileMessage,
+  type SessionMessage,
+} from "@/libs/services/rtc-protocol";
 import { sessionService } from "@/libs/services/session-service";
 import { toast } from "solid-sonner";
 import {
   FileTransferMessage,
   messageStores,
-  ErrorMessage,
   type StoreMessage,
-  type SessionMessage,
-  RequestFileMessage,
-  ResumeFileMessage,
-  SendClipboardMessage,
-  SendFileMessage,
-  SendTextMessage,
-  RequestStorageMessage,
-  StorageMessage,
 } from "@/libs/core/message";
 import { catchError } from "@/libs/catch";
 
@@ -119,6 +124,45 @@ export const AppStateProvider: Component<
   let clipboardCacheData: SendClipboardMessage[] = [];
   let clientServiceListenersBound = false;
 
+  createEffect(() => {
+    saveMediaConstraintsToSession({
+      microphone: {
+        autoGainControl:
+          appState.media.constraints.microphone
+            .autoGainControl,
+        echoCancellation:
+          appState.media.constraints.microphone
+            .echoCancellation,
+        noiseSuppression:
+          appState.media.constraints.microphone
+            .noiseSuppression,
+        voiceIsolation:
+          appState.media.constraints.microphone
+            .voiceIsolation,
+      },
+      speaker: {
+        suppressLocalAudioPlayback:
+          appState.media.constraints.speaker
+            .suppressLocalAudioPlayback,
+        echoCancellation:
+          appState.media.constraints.speaker
+            .echoCancellation,
+        noiseSuppression:
+          appState.media.constraints.speaker
+            .noiseSuppression,
+        autoGainControl:
+          appState.media.constraints.speaker
+            .autoGainControl,
+        latency:
+          appState.media.constraints.speaker.latency,
+      },
+      video: {
+        frameRate:
+          appState.media.constraints.video.frameRate,
+      },
+    });
+  });
+
   const onFocus = () => {
     if (clipboardCacheData.length === 0) return;
     const data = clipboardCacheData
@@ -151,7 +195,7 @@ export const AppStateProvider: Component<
       { ackMode: "receive" },
     );
 
-    const offClipboard = protocol.on(
+    const offClipboard = protocol.onRequest(
       "send-clipboard",
       ({ message }) => {
         sessionService.setClipboard(message);
@@ -172,6 +216,7 @@ export const AppStateProvider: Component<
             });
         }
       },
+      { ackMode: "receive" },
     );
 
     const offSendFile = protocol.onRequest(
@@ -253,113 +298,7 @@ export const AppStateProvider: Component<
       { ackMode: "send" },
     );
 
-    const offCheckMessage = protocol.on(
-      "check-message",
-      async ({ session, message }) => {
-        messageStores.setReceiveMessage(message);
-        const index = messageStores.messages.findLastIndex(
-          (msg) => msg.id === message.id,
-        );
-        if (index === -1) {
-          console.warn(
-            `check message ${message.id} not found`,
-          );
-          throw new Error(
-            `check message ${message.id} not found`,
-          );
-        }
-        const storeMessage = messageStores.messages[index];
-        if (storeMessage.type === "file") {
-          if (!storeMessage.fid) {
-            throw new Error(
-              `file transfer message ${message.id} fid is undefined`,
-            );
-          }
-          const cache = cacheManager.getCache(storeMessage.fid);
-          if (!cache) {
-            console.warn(
-              `cache ${storeMessage.fid} not found`,
-            );
-            throw new Error(
-              `cache ${storeMessage.fid} not found`,
-            );
-          }
-          if (message.mode === "send") {
-            const transferer = transferManager.createTransfer(
-              cache,
-              TransferMode.Receive,
-            );
-            messageStores.addTransfer(transferer);
-            await transferer.initialize();
-            for (
-              let i = 0;
-              i < appState.options.channelsNumber;
-              i++
-            ) {
-              const [err, channel] =
-                await catchError(
-                  session.createChannel(
-                    `${transferer.id}-${i}`,
-                    "transfer",
-                  ),
-                );
-              if (err) {
-                console.error(err);
-                throw err;
-              }
-
-              if (channel) {
-                transferManager.addChannel(cache.id, channel);
-              }
-            }
-          } else if (message.mode === "receive") {
-            const transferer = transferManager.createTransfer(
-              cache,
-              TransferMode.Send,
-            );
-
-            messageStores.addTransfer(transferer);
-            transferer.addEventListener("ready", async () => {
-              const [error] = await catchError(
-                transferer.sendFile(),
-              );
-              if (error) {
-                console.error(error);
-                toast.error(error.message);
-              }
-            });
-            await transferer.initialize();
-
-            for (
-              let i = 0;
-              i < appState.options.channelsNumber;
-              i++
-            ) {
-              const [err, channel] =
-                await catchError(
-                  session.createChannel(
-                    `${transferer.id}-${i}`,
-                    "transfer",
-                  ),
-                );
-              if (err) {
-                console.error(err);
-                throw err;
-              }
-
-              if (!channel) continue;
-
-              transferManager.addChannel(
-                storeMessage.fid,
-                channel,
-              );
-            }
-          }
-        }
-      },
-    );
-
-    const offResumeFile = protocol.on(
+    const offResumeFile = protocol.onRequest(
       "resume-file",
       async ({ message }) => {
         const cache = cacheManager.getCache(message.fid);
@@ -372,34 +311,64 @@ export const AppStateProvider: Component<
             `cache ${message.fid} info not found`,
           );
         }
-        requestFile(message.client, info, true);
+        await requestFile(message.client, info, true);
+      },
+      { ackMode: "receive" },
+    );
+
+    const offStorage = protocol.onRequest(
+      "storage",
+      ({ message }) => {
+        sessionService.setStorage(message);
+      },
+      { ackMode: "receive" },
+    );
+
+    const offStreamState = protocol.on(
+      "stream-state",
+      ({ message }) => {
+        if (!sessionService.clientViewData[message.client]) {
+          return;
+        }
+        setAppState(
+          "session",
+          "clientViewData",
+          message.client,
+          "streamState",
+          message.mode,
+        );
       },
     );
 
-    const offStorage = protocol.on("storage", ({ message }) =>
-      sessionService.setStorage(message),
-    );
-
-    const offRequestStorage = protocol.on(
+    const offRequestStorage = protocol.onRequest(
       "request-storage",
       async ({ session, message }) => {
-        const replyMessage = {
-          type: "storage",
-          data: (await cacheManager.getStorages()) ?? [],
-          createdAt: Date.now(),
+        const replyMessage = protocolMessageFactory.storage({
+          data:
+            (await cacheManager.getStorages({
+              includeIncomplete: false,
+            })) ?? [],
           client: message.target,
           target: message.client,
           id: message.id,
-        } satisfies StorageMessage;
+        });
 
-        protocol.send(session, replyMessage);
+        const result = await protocol.requestWithResult(
+          session,
+          replyMessage,
+          {
+            timeoutMs: 5000,
+          },
+        );
+        if (
+          !result.ok &&
+          result.error.code !== "already-pending"
+        ) {
+          throw new Error(result.error.message);
+        }
       },
+      { ackMode: "receive" },
     );
-
-    const offError = protocol.on("error", ({ message }) => {
-      messageStores.setReceiveMessage(message);
-      console.warn(message.error);
-    });
 
     const offChannel = rtc.onChannel(({ channel }) => {
       if (channel.protocol !== "transfer") return;
@@ -427,11 +396,10 @@ export const AppStateProvider: Component<
       offClipboard();
       offSendFile();
       offRequestFile();
-      offCheckMessage();
       offResumeFile();
       offStorage();
+      offStreamState();
       offRequestStorage();
-      offError();
       offChannel();
     });
   });
@@ -551,60 +519,131 @@ export const AppStateProvider: Component<
     return sessions.filter((s) => s);
   }
 
-  const getProtocolRequestError = (err: unknown) => {
-    if (!(err instanceof Error)) return null;
-    if (!err.message.startsWith("[RtcProtocol]")) return null;
-    if (
-      err.message.startsWith(
-        "[RtcProtocol] request already pending",
-      )
-    ) {
-      return null;
-    }
-    if (err.message === "[RtcProtocol] request timeout") {
-      return "send timeout";
-    }
-    if (err.message === "[RtcProtocol] request aborted") {
-      return "send aborted";
-    }
-    return err.message;
+  const getRequestErrorMessage = (
+    error: RtcProtocolRequestError,
+  ) => {
+    if (error.code === "already-pending") return null;
+    return error.message;
   };
 
   const setLocalSendError = (
     request: SessionMessage,
     error: string,
   ) => {
-    const errorMessage = {
-      type: "error",
-      id: request.id,
-      createdAt: Date.now(),
+    const errorMessage = protocolMessageFactory.error({
       client: request.client,
       target: request.target,
-      fid:
-        request.type === "send-file" ||
-        request.type === "request-file"
-          ? request.fid
-          : undefined,
       error,
-    } satisfies ErrorMessage;
+      id: request.id,
+    });
 
     messageStores.setReceiveMessage(errorMessage);
   };
 
-  const requestWithAck = (
-    session: PeerSession,
-    message: SessionMessage,
+  const resolveAckResult = (
+    request: SessionMessage,
+    result: RtcProtocolRequestResult,
   ) => {
-    const timeoutMs = session.isMessageChannelReady
-      ? 5000
-      : 20000;
-    void protocol
-      .request(session, message, { timeoutMs })
-      .catch((err) => {
-        const error = getProtocolRequestError(err);
-        if (!error) return;
-        setLocalSendError(message, error);
+    if (!result.ok) {
+      const error = getRequestErrorMessage(result.error);
+      if (error) {
+        setLocalSendError(request, error);
+      }
+      return null;
+    }
+    messageStores.setReceiveMessage(result.ackMessage);
+    return result.ackMessage;
+  };
+
+  const resolveSilentResult = (
+    request: SessionMessage,
+    result: RtcProtocolRequestResult,
+    options: {
+      silent?: boolean;
+    } = {},
+  ) => {
+    if (result.ok) return true;
+    const error = getRequestErrorMessage(result.error);
+    if (error && !options.silent) {
+      console.warn(
+        `[AppState] request ${request.type} failed: ${error}`,
+      );
+    }
+    return false;
+  };
+
+  const addTransferChannels = async (
+    session: PeerSession,
+    transferId: FileID,
+    fileId: FileID,
+  ) => {
+    for (let i = 0; i < appState.options.channelsNumber; i++) {
+      const [err, channel] = await catchError(
+        session.createChannel(`${transferId}-${i}`, "transfer"),
+      );
+      if (err) throw err;
+      if (!channel) continue;
+      transferManager.addChannel(fileId, channel);
+    }
+  };
+
+  const setupTransferAfterAck = async (
+    session: PeerSession,
+    message: SendFileMessage | RequestFileMessage,
+    ackMessage: AckMessage,
+  ) => {
+    const cache = cacheManager.getCache(message.fid);
+    if (!cache) {
+      throw new Error(`cache ${message.fid} not found`);
+    }
+
+    if (message.type === "send-file") {
+      if (ackMessage.mode !== "receive") return;
+      const transferer = transferManager.createTransfer(
+        cache,
+        TransferMode.Send,
+      );
+      messageStores.addTransfer(transferer);
+      transferer.addEventListener("ready", async () => {
+        const [error] = await catchError(transferer.sendFile());
+        if (error) {
+          console.error(error);
+          toast.error(error.message);
+        }
       });
+      await transferer.initialize();
+      await addTransferChannels(
+        session,
+        transferer.id,
+        message.fid,
+      );
+      return;
+    }
+
+    if (ackMessage.mode !== "send") return;
+    const transferer = transferManager.createTransfer(
+      cache,
+      TransferMode.Receive,
+    );
+    messageStores.addTransfer(transferer);
+    await transferer.initialize();
+    await addTransferChannels(session, transferer.id, message.fid);
+  };
+
+  const setupTransferAfterAckSafe = async (
+    session: PeerSession,
+    message: SendFileMessage | RequestFileMessage,
+    ackMessage: AckMessage,
+  ) => {
+    const [err] = await catchError(
+      setupTransferAfterAck(session, message, ackMessage),
+    );
+    if (!err) return;
+    console.error(err);
+    setLocalSendError(
+      message,
+      err instanceof Error ? err.message : String(err),
+    );
   };
 
   async function sendText(
@@ -615,18 +654,19 @@ export const AppStateProvider: Component<
     if (sessions.length === 0) return;
 
     for (const session of sessions) {
-      const message = {
-        id: v4(),
-        type: "send-text",
+      const message = protocolMessageFactory.sendText({
         client: session.clientId,
         target: session.targetClientId,
         data: text,
-        createdAt: Date.now(),
-      } satisfies SendTextMessage;
+      });
       messageStores.setSendMessage(message, {
         timeoutMs: null,
       });
-      requestWithAck(session, message);
+      const result = await protocol.requestWithResult(
+        session,
+        message,
+      );
+      resolveAckResult(message, result);
       console.log(`send text message`, message);
     }
   }
@@ -640,24 +680,19 @@ export const AppStateProvider: Component<
 
     for (const session of sessions) {
       const fid = v4();
-      const target = session.targetClientId;
-      const client = session.clientId;
-      const message = {
-        id: v4(),
-        type: "send-file",
-        client: client,
-        target: target,
-        fid: fid,
+      const message = protocolMessageFactory.sendFile({
+        client: session.clientId,
+        target: session.targetClientId,
+        fid,
         fileName: file.name,
         fileSize: file.size,
         mimeType: file.type,
         lastModified: file.lastModified,
-        createdAt: Date.now(),
         chunkSize: appState.options.chunkSize,
-      } satisfies SendFileMessage;
+      });
 
       const cache = await cacheManager.createCache(message.fid);
-      cache.setInfo({
+      await cache.setInfo({
         fileName: message.fileName,
         fileSize: message.fileSize,
         mimetype: message.mimeType,
@@ -671,7 +706,17 @@ export const AppStateProvider: Component<
       messageStores.setSendMessage(message, {
         timeoutMs: null,
       });
-      requestWithAck(session, message);
+      const result = await protocol.requestWithResult(
+        session,
+        message,
+      );
+      const ackMessage = resolveAckResult(message, result);
+      if (!ackMessage) continue;
+      await setupTransferAfterAckSafe(
+        session,
+        message,
+        ackMessage,
+      );
     }
   }
 
@@ -683,16 +728,17 @@ export const AppStateProvider: Component<
     if (sessions.length === 0) return;
 
     for (const session of sessions) {
-      const message = {
-        type: "send-clipboard",
-        id: v4(),
-        createdAt: Date.now(),
+      const message = protocolMessageFactory.sendClipboard({
         client: session.clientId,
         target: session.targetClientId,
         data: text,
-      } satisfies SendClipboardMessage;
+      });
 
-      protocol.send(session, message);
+      const result = await protocol.requestWithResult(
+        session,
+        message,
+      );
+      resolveSilentResult(message, result);
     }
   }
 
@@ -703,15 +749,16 @@ export const AppStateProvider: Component<
     if (sessions.length === 0) return;
 
     for (const session of sessions) {
-      const message = {
-        type: "request-storage",
-        id: v4(),
-        createdAt: Date.now(),
+      const message = protocolMessageFactory.requestStorage({
         client: session.clientId,
         target: session.targetClientId,
-      } satisfies RequestStorageMessage;
+      });
 
-      protocol.send(session, message);
+      const result = await protocol.requestWithResult(
+        session,
+        message,
+      );
+      resolveSilentResult(message, result);
     }
   }
 
@@ -723,19 +770,22 @@ export const AppStateProvider: Component<
     if (!session) return;
 
     if (message.type === "text") {
-      const sessionMessage = {
-        id: message.id,
-        type: "send-text",
+      const sessionMessage = protocolMessageFactory.sendText({
         client: session.clientId,
         target: session.targetClientId,
         data: message.data,
+        id: message.id,
         createdAt: message.createdAt,
-      } satisfies SendTextMessage;
+      });
 
       messageStores.retrySendMessage(sessionMessage, {
         timeoutMs: null,
       });
-      requestWithAck(session, sessionMessage);
+      const result = await protocol.requestWithResult(
+        session,
+        sessionMessage,
+      );
+      resolveAckResult(sessionMessage, result);
     } else if (message.type === "file") {
       if (!message.fid) return;
 
@@ -772,9 +822,7 @@ export const AppStateProvider: Component<
         return;
       }
 
-      const sessionMessage = {
-        id: message.id,
-        type: "send-file",
+      const sessionMessage = protocolMessageFactory.sendFile({
         client: session.clientId,
         target: session.targetClientId,
         fid: message.fid,
@@ -784,12 +832,26 @@ export const AppStateProvider: Component<
         lastModified: message.lastModified,
         chunkSize: message.chunkSize,
         createdAt: message.createdAt,
-      } satisfies SendFileMessage;
+        id: message.id,
+      });
 
       messageStores.retrySendMessage(sessionMessage, {
         timeoutMs: null,
       });
-      requestWithAck(session, sessionMessage);
+      const result = await protocol.requestWithResult(
+        session,
+        sessionMessage,
+      );
+      const ackMessage = resolveAckResult(
+        sessionMessage,
+        result,
+      );
+      if (!ackMessage) return;
+      await setupTransferAfterAckSafe(
+        session,
+        sessionMessage,
+        ackMessage,
+      );
     }
   }
 
@@ -815,9 +877,7 @@ export const AppStateProvider: Component<
       return;
     }
 
-    const message = {
-      id: v4(),
-      type: "send-file",
+    const message = protocolMessageFactory.sendFile({
       client: session.clientId,
       target: session.targetClientId,
       fid: fileId,
@@ -825,13 +885,22 @@ export const AppStateProvider: Component<
       fileSize: info.fileSize,
       mimeType: info.mimetype,
       lastModified: info.lastModified,
-      createdAt: Date.now(),
       chunkSize: appState.options.chunkSize,
-    } satisfies SendFileMessage;
+    });
     messageStores.setSendMessage(message, {
       timeoutMs: null,
     });
-    requestWithAck(session, message);
+    const result = await protocol.requestWithResult(
+      session,
+      message,
+    );
+    const ackMessage = resolveAckResult(message, result);
+    if (!ackMessage) return;
+    await setupTransferAfterAckSafe(
+      session,
+      message,
+      ackMessage,
+    );
   }
 
   async function requestFile(
@@ -893,9 +962,7 @@ export const AppStateProvider: Component<
         ? existing.createdAt
         : Date.now();
 
-    const message = {
-      id,
-      type: "request-file",
+    const message = protocolMessageFactory.requestFile({
       fid: info.id,
       client: session.clientId,
       target: session.targetClientId,
@@ -905,9 +972,10 @@ export const AppStateProvider: Component<
       mimeType: info.mimetype,
       lastModified: info.lastModified,
       chunkSize: info.chunkSize ?? appState.options.chunkSize,
-      createdAt,
       resume,
-    } satisfies RequestFileMessage;
+      id,
+      createdAt,
+    });
 
     if (existing) {
       if (existing.status === "error") {
@@ -925,7 +993,17 @@ export const AppStateProvider: Component<
       });
     }
 
-    requestWithAck(session, message);
+    const result = await protocol.requestWithResult(
+      session,
+      message,
+    );
+    const ackMessage = resolveAckResult(message, result);
+    if (!ackMessage) return;
+    await setupTransferAfterAckSafe(
+      session,
+      message,
+      ackMessage,
+    );
   }
 
   async function resumeFile(fileId: FileID, target: ClientID) {
@@ -943,16 +1021,18 @@ export const AppStateProvider: Component<
     if (!transferMessage) return;
     if (transferMessage.transferStatus === "complete") return;
 
-    const message = {
-      id: transferMessage.id,
-      type: "resume-file",
+    const message = protocolMessageFactory.resumeFile({
       fid: fileId,
       client: session.clientId,
       target: session.targetClientId,
-      createdAt: Date.now(),
-    } satisfies ResumeFileMessage;
+      id: transferMessage.id,
+    });
 
-    protocol.send(session, message);
+    const result = await protocol.requestWithResult(
+      session,
+      message,
+    );
+    resolveSilentResult(message, result);
   }
 
   async function pauseFile(fileId: FileID, target: ClientID) {

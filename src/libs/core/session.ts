@@ -6,7 +6,10 @@ import {
   EventHandler,
   MultiEventEmitter,
 } from "../utils/event-emitter";
-import { SessionMessage } from "./message";
+import {
+  type SessionMessage,
+  type StreamStateMessage,
+} from "@/libs/services/rtc-protocol";
 import { waitChannel } from "./utils/channel";
 import { catchError, catchErrorSync } from "../catch";
 import { appState } from "@/libs/state/app-state";
@@ -67,6 +70,11 @@ export class PeerSession {
   private signalCache: Array<ClientSignal> = [];
   readonly polite: boolean;
   private localStream: MediaStream | null = null;
+  private defaultBlankStream: MediaStream | null = null;
+  private defaultBlankCanvas: HTMLCanvasElement | null =
+    null;
+  private lastLocalStreamState: StreamStateMessage["mode"] | null =
+    null;
   private remoteStream: MediaStream | null = null;
   private status: PeerSessionStatus = "init";
   private listenController: AbortController | null = null;
@@ -329,6 +337,102 @@ export class PeerSession {
     }
   }
 
+  private isDefaultBlankStream(
+    stream: MediaStream | null,
+  ) {
+    if (!stream || !this.defaultBlankStream) {
+      return false;
+    }
+    return stream.id === this.defaultBlankStream.id;
+  }
+
+  private clearDefaultBlankStream(
+    stream: MediaStream | null,
+  ) {
+    if (!this.isDefaultBlankStream(stream)) {
+      return;
+    }
+    this.defaultBlankStream = null;
+    this.defaultBlankCanvas = null;
+  }
+
+  private createDefaultBlankStream() {
+    if (
+      typeof document === "undefined" ||
+      typeof document.createElement !== "function"
+    ) {
+      return null;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 2;
+    canvas.height = 2;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const captureStream = (
+      canvas as HTMLCanvasElement & {
+        captureStream?: (
+          frameRate?: number,
+        ) => MediaStream;
+      }
+    ).captureStream;
+
+    if (typeof captureStream !== "function") {
+      return null;
+    }
+
+    const [captureError, stream] = catchErrorSync(() =>
+      captureStream.call(canvas, 1),
+    );
+
+    if (captureError || !stream) {
+      console.warn(
+        `[PeerSession] failed to create default blank stream`,
+        captureError,
+      );
+      return null;
+    }
+
+    this.defaultBlankCanvas = canvas;
+    this.defaultBlankStream = stream;
+    return stream;
+  }
+
+  private createMessageId() {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  private notifyLocalStreamState(stream: MediaStream | null) {
+    if (!stream) return;
+    const mode: StreamStateMessage["mode"] =
+      this.isDefaultBlankStream(stream) ?
+        "placeholder"
+      : "media";
+    if (this.lastLocalStreamState === mode) return;
+    this.lastLocalStreamState = mode;
+
+    const message = {
+      type: "stream-state",
+      mode,
+      id: this.createMessageId(),
+      createdAt: Date.now(),
+      client: this.clientId,
+      target: this.targetClientId,
+    } satisfies StreamStateMessage;
+
+    this.sendMessage(message);
+  }
+
   private initializeConnection() {
     if (this.status === "closed") {
       throw new Error(
@@ -543,8 +647,16 @@ export class PeerSession {
       { signal: controller.signal },
     );
 
+    if (!this.localStream) {
+      const blankStream = this.createDefaultBlankStream();
+      if (blankStream) {
+        this.localStream = blankStream;
+      }
+    }
+
     if (this.localStream) {
       const stream = this.localStream;
+      this.notifyLocalStreamState(stream);
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
@@ -1322,11 +1434,13 @@ export class PeerSession {
     console.log(
       `[PeerSession] client ${this.targetClientId} removeStream`,
     );
-    if (this.localStream) {
-      this.localStream.getTracks().forEach((track) => {
-        this.localStream?.removeTrack(track);
+    const localStream = this.localStream;
+    if (localStream) {
+      localStream.getTracks().forEach((track) => {
+        localStream.removeTrack(track);
         track.stop();
       });
+      this.clearDefaultBlankStream(localStream);
       this.localStream = null;
     }
     const pc = this.peerConnection;
@@ -1350,7 +1464,18 @@ export class PeerSession {
       stream,
     );
     if (!stream) {
+      if (this.isDefaultBlankStream(this.localStream)) {
+        this.notifyLocalStreamState(this.localStream);
+        return;
+      }
       this.removeStream();
+
+      const blankStream = this.createDefaultBlankStream();
+      if (!blankStream) {
+        return;
+      }
+
+      this.setStream(blankStream);
       return;
     }
 
@@ -1366,6 +1491,7 @@ export class PeerSession {
     }
 
     this.localStream = stream;
+    this.notifyLocalStreamState(stream);
 
     let senders: RTCRtpSender[] = [];
 
@@ -1846,6 +1972,7 @@ export class PeerSession {
 
   private resetSession() {
     this.makingOffer = false;
+    this.lastLocalStreamState = null;
     if (this.disconnectionTimer !== null) {
       window.clearTimeout(this.disconnectionTimer);
       this.disconnectionTimer = null;

@@ -18,7 +18,6 @@ export const createChatFolderCompressDialog = () => {
 
   const {
     open: openDialog,
-    Component,
     close,
   } = createDialog({
     title: () => t("client.chat.compress_folder"),
@@ -46,6 +45,5 @@ export const createChatFolderCompressDialog = () => {
 
   return {
     open: open,
-    Component: Component,
   };
 };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PeerSession } from "@/libs/core/session";
 import type { SignalingService } from "@/libs/core/services/type";
-import type { SendTextMessage } from "@/libs/core/message";
+import type { SendTextMessage } from "@/libs/services/rtc-protocol";
 
 if (typeof window === "undefined") {
   (globalThis as any).window = {

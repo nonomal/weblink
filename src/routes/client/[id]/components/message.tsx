@@ -67,7 +67,7 @@ import {
 import { catchError } from "@/libs/catch";
 import { toast } from "solid-sonner";
 import { Spinner } from "@/components/common/spinner";
-import { createPreviewDialog } from "@/components/preview-dialog";
+import { createPreviewDialog } from "@/components/dialogs/preview-dialog";
 import { downloadFile } from "@/libs/utils/download-file";
 import { FileID } from "@/libs/core/type";
 import { canShareFile } from "@/libs/utils/can-share";
@@ -526,10 +526,7 @@ export const MessageContent: Component<MessageCardProps> = (
       appState.session.clientViewData[local.message.target],
   );
   const { retryMessage } = useAppState();
-  const {
-    open: openPreviewDialog,
-    Component: PreviewDialogComponent,
-  } = createPreviewDialog();
+  const { open: openPreviewDialog } = createPreviewDialog();
 
   const shouldShowRestoreButton = createMemo(() => {
     if (!targetClientInfo()?.messageChannel) return false;
@@ -838,7 +835,6 @@ export const MessageContent: Component<MessageCardProps> = (
           {...p}
           {...other}
         >
-          <PreviewDialogComponent />
           <article class="w-full text-sm break-all whitespace-pre-wrap">
             <Switch>
               <Match

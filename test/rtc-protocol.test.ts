@@ -2,13 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import {
   RtcProtocol,
   type RtcProtocolTransport,
+  type AckMessage,
+  type SendTextMessage,
+  type SessionMessage,
 } from "@/libs/services/rtc-protocol";
 import type { PeerSession } from "@/libs/core/session";
-import type {
-  CheckMessage,
-  SendTextMessage,
-  SessionMessage,
-} from "@/libs/core/message";
 import type { ClientID } from "@/libs/core/type";
 
 class FakeTransport implements RtcProtocolTransport {
@@ -86,8 +84,8 @@ describe("RtcProtocol", () => {
     await flush();
     expect(transport.sendCalls).toHaveLength(1);
 
-    const ack = transport.sendCalls[0]!.message as CheckMessage;
-    expect(ack.type).toBe("check-message");
+    const ack = transport.sendCalls[0]!.message as AckMessage;
+    expect(ack.type).toBe("ack");
     expect(ack.id).toBe("m1");
     expect(ack.mode).toBe("receive");
     expect(ack.client).toBe("a");
@@ -126,32 +124,28 @@ describe("RtcProtocol", () => {
     expect(handler).toHaveBeenCalledTimes(1);
     await flush();
     expect(transport.sendCalls).toHaveLength(2);
-    expect(transport.sendCalls[0]!.message.type).toBe(
-      "check-message",
-    );
-    expect(transport.sendCalls[1]!.message.type).toBe(
-      "check-message",
-    );
+    expect(transport.sendCalls[0]!.message.type).toBe("ack");
+    expect(transport.sendCalls[1]!.message.type).toBe("ack");
   });
 
-  it("dedups check-message by id (ignores createdAt)", async () => {
+  it("dedups ack by id (ignores createdAt)", async () => {
     const transport = new FakeTransport();
     const protocol = new RtcProtocol(transport);
     const session = makeSession("a", "b");
 
     const handler = vi.fn();
-    protocol.on("check-message", ({ message }) => {
+    protocol.on("ack", ({ message }) => {
       handler(message.id);
     });
 
     const msg1 = {
       id: "m1",
-      type: "check-message",
+      type: "ack",
       createdAt: 1,
       client: "a",
       target: "b",
       mode: "receive",
-    } satisfies CheckMessage;
+    } satisfies AckMessage;
 
     const msg2 = { ...msg1, createdAt: 2 };
 
@@ -161,7 +155,7 @@ describe("RtcProtocol", () => {
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
-  it("request() resolves when check-message arrives", async () => {
+  it("request() resolves when ack arrives", async () => {
     vi.useFakeTimers();
     const transport = new FakeTransport();
     const protocol = new RtcProtocol(transport);
@@ -184,15 +178,15 @@ describe("RtcProtocol", () => {
 
     transport.emit(session, {
       id: "m1",
-      type: "check-message",
+      type: "ack",
       createdAt: 2,
       client: "a",
       target: "b",
       mode: "receive",
-    } satisfies CheckMessage);
+    } satisfies AckMessage);
 
     await expect(promise).resolves.toMatchObject({
-      type: "check-message",
+      type: "ack",
       id: "m1",
     });
 
@@ -223,4 +217,5 @@ describe("RtcProtocol", () => {
     await expect(promise).rejects.toThrow(/timeout/i);
     vi.useRealTimers();
   });
+
 });

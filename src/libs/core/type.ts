@@ -1,6 +1,6 @@
-import { ChunkMetaData } from "../cache";
-import { SendClipboardMessage } from "./message";
-import { TransferClient } from "./services/type";
+import type { ChunkMetaData } from "../cache";
+import type { TransferClient } from "./services/type";
+import type { SendClipboardMessage } from "@/libs/services/rtc-protocol";
 
 export type RoomStatus = {
   roomId: RoomID | null;
@@ -30,6 +30,7 @@ export interface ClientInfo extends TransferClient {
     | "online"
     | "connecting"
     | "reconnecting";
+  streamState?: "placeholder" | "media";
   clipboard?: SendClipboardMessage[];
   storage?: ChunkMetaData[];
   messageChannel: boolean;

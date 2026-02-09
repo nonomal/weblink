@@ -2,13 +2,12 @@ import { t } from "@/i18n";
 import {
   checkBrowserSupport,
   isWebRTCAvailable,
-  MIN_VERSIONS,
 } from "@/libs/utils/browser-compatibility";
 import { APP_NAME } from "@/constants";
 import { JSX } from "solid-js";
-import { createDialog } from "../dialogs/dialog";
+import { createVersionSupportDetailsDialog } from "@/components/dialogs/compatibility-dialog";
 import { ThemeToggle } from "@/components/common/theme-toggle";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 
 export const CompatibilityView = (props: {
   children: JSX.Element;
@@ -29,33 +28,8 @@ export const CompatibilityView = (props: {
       ),
     );
   }
-  const {
-    Component: VersionSupportDetailsDialog,
-    open: openVersionSupportDetailsDialog,
-  } = createDialog({
-    title: () =>
-      t("browser_unsupported.version_support_details"),
-    content: () => (
-      <table class="table">
-        <thead>
-          <tr>
-            <th>{t("browser_unsupported.browser")}</th>
-            <th>{t("browser_unsupported.version")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(MIN_VERSIONS).map(
-            ([browser, version]) => (
-              <tr>
-                <td>{browser}</td>
-                <td>{version}</td>
-              </tr>
-            ),
-          )}
-        </tbody>
-      </table>
-    ),
-  });
+  const { open: openVersionSupportDetailsDialog } =
+    createVersionSupportDetailsDialog();
 
   if (reasons.length === 0) {
     return props.children;
@@ -63,7 +37,6 @@ export const CompatibilityView = (props: {
 
   return (
     <>
-      <VersionSupportDetailsDialog />
       <div class="bg-background/80 flex h-screen flex-col p-2 backdrop-blur">
         <div class="flex items-center justify-between">
           <h2 class="p-2 font-mono text-xl font-bold">

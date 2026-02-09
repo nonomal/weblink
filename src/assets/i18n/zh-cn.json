@@ -296,6 +296,12 @@
       "title": "确认删除",
       "description": "确认删除以下 {{count}} 个文件？"
     },
+    "delete_file_message_dialog": {
+      "title": "删除文件消息",
+      "description": "确认删除文件消息。",
+      "delete_transfer": "同时删除对应传输任务",
+      "delete_cache": "同时删除本地缓存"
+    },
     "preview_dialog": {
       "title": "预览",
       "unsupported_file_type": "不支持的文件类型"

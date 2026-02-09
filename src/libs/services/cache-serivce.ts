@@ -99,19 +99,30 @@ export class FileCacheFactory {
     setAppState("cache", "caches", id, cache);
   }
 
-  async getStorages(): Promise<ChunkCacheInfo[] | null> {
-    let storage = await Promise.all(
+  async getStorages(
+    options: {
+      includeIncomplete?: boolean;
+    } = {},
+  ): Promise<ChunkCacheInfo[] | null> {
+    const includeIncomplete =
+      options.includeIncomplete ?? false;
+
+    return Promise.all(
       Object.values(this.caches).map((cache) =>
         cache.getInfo(),
       ),
-    ).then(
-      (infos) =>
-        infos.filter(Boolean).map((info) => {
-          const { file, ...rest } = info ?? {};
+    ).then((infos) => {
+      return infos
+        .filter((info): info is FileMetaData => {
+          if (!info) return false;
+          if (includeIncomplete) return true;
+          return Boolean(info.isComplete);
+        })
+        .map((info) => {
+          const { file, ...rest } = info;
           return rest;
-        }) as ChunkCacheInfo[],
-    );
-    return storage;
+        }) as ChunkCacheInfo[];
+    });
   }
 
   async createCache(id?: FileID): Promise<ChunkCache> {

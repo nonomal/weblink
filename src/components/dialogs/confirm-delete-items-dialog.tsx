@@ -1,8 +1,8 @@
 import { createSignal } from "solid-js";
 import { For } from "solid-js";
-import { createDialog } from "./dialogs/dialog";
+import { createDialog } from "./dialog";
 import { t } from "@/i18n";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 
 export const createComfirmDeleteItemsDialog = () => {
   const [names, setNames] = createSignal<string[]>([]);
@@ -10,7 +10,6 @@ export const createComfirmDeleteItemsDialog = () => {
     open: openDeleteDialog,
     close,
     submit,
-    Component,
   } = createDialog<boolean>({
     title: () =>
       t("common.confirm_delete_files_dialog.title"),
@@ -48,5 +47,5 @@ export const createComfirmDeleteItemsDialog = () => {
     return await openDeleteDialog();
   };
 
-  return { open, Component };
+  return { open };
 };

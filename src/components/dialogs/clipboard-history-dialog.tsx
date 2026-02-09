@@ -1,5 +1,5 @@
 import { t } from "@/i18n";
-import { createDialog } from "../dialogs/dialog";
+import { createDialog } from "./dialog";
 import {
   Accessor,
   createEffect,
@@ -10,12 +10,12 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "../ui/tooltip";
+} from "@/components/ui/tooltip";
 import { toast } from "solid-sonner";
-import { SendClipboardMessage } from "@/libs/core/message";
+import type { SendClipboardMessage } from "@/libs/services/rtc-protocol";
 import { createTimeAgo } from "@/libs/utils/timeago";
 export const createClipboardHistoryDialog = () => {
-  const { open: openDialog, Component } = createDialog({
+  const { open: openDialog } = createDialog({
     title: () => t("common.clipboard_history.title"),
     content: () => (
       <div class="max-h-[60vh] overflow-y-auto p-2">
@@ -70,5 +70,5 @@ export const createClipboardHistoryDialog = () => {
     openDialog();
   };
 
-  return { open, Component };
+  return { open };
 };

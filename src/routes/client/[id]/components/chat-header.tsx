@@ -29,13 +29,13 @@ import {
   IconFolderMatch,
   IconMenu,
 } from "@/components/icons";
-import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
+import { createComfirmDeleteClientDialog } from "@/components/dialogs/confirm-delete-client-dialog";
 import { t } from "@/i18n";
 import { ConnectionBadge } from "@/components/common/connection-badge";
 import { toast } from "solid-sonner";
 import { setAppOptions } from "@/options";
-import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
-import clientInfoDialog from "./chat-client-info";
+import { createClipboardHistoryDialog } from "@/components/dialogs/clipboard-history-dialog";
+import clientInfoDialog from "@/components/dialogs/client-info-dialog";
 import { ClientInfo, Client } from "@/libs/core/type";
 import {
   Tooltip,
@@ -50,34 +50,19 @@ export const ChatHeader: Component<{
   client: Client;
   class?: string;
 }> = (props) => {
-  const {
-    open: openClipboardHistoryDialog,
-    Component: ClipboardHistoryDialogComponent,
-  } = createClipboardHistoryDialog();
-  const {
-    open: openConfirmDeleteClientDialog,
-    Component: ConfirmDeleteClientDialogComponent,
-  } = createComfirmDeleteClientDialog();
-  const {
-    open: openClientInfoDialog,
-    Component: ClientInfoDialogComponent,
-  } = clientInfoDialog();
+  const { open: openClipboardHistoryDialog } =
+    createClipboardHistoryDialog();
+  const { open: openConfirmDeleteClientDialog } =
+    createComfirmDeleteClientDialog();
+  const { open: openClientInfoDialog } =
+    clientInfoDialog();
 
   return (
-    <>
-      <ClipboardHistoryDialogComponent />
-      <ConfirmDeleteClientDialogComponent />
-      <ClientInfoDialogComponent />
-      <div class={props.class}>
-        <div class="flex w-full items-center gap-2">
-          <Button
-            as={A}
-            href="/"
-            size="icon"
-            variant="ghost"
-          >
-            <IconChevronLeft class="size-8" />
-          </Button>
+    <div class={props.class}>
+      <div class="flex w-full items-center gap-2">
+        <Button as={A} href="/" size="icon" variant="ghost">
+          <IconChevronLeft class="size-8" />
+        </Button>
 
           <Avatar>
             <AvatarImage
@@ -222,8 +207,7 @@ export const ChatHeader: Component<{
               {t("client.menu.options")}
             </TooltipContent>
           </Tooltip>
-        </div>
       </div>
-    </>
+    </div>
   );
 };

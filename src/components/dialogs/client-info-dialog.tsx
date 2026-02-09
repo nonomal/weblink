@@ -105,7 +105,7 @@ const clientInfoDialog = () => {
     }
   });
 
-  const { open: openDialog, Component } = createDialog({
+  const { open: openDialog } = createDialog({
     title: () =>
       t("common.client_info_dialog.title", {
         name: client()?.name,
@@ -186,7 +186,6 @@ const clientInfoDialog = () => {
 
   return {
     open,
-    Component,
   };
 };
 

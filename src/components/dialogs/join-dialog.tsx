@@ -1,7 +1,7 @@
 import { setClientProfile } from "@/libs/core/store";
-import { createDialog } from "./dialogs/dialog";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+import { createDialog } from "./dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { optional } from "@/libs/core/utils/optional";
 import { useAppState } from "@/libs/state/app-state-context";
 import {
@@ -14,14 +14,14 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "./ui/avatar";
+} from "@/components/ui/avatar";
 import {
   Switch,
   SwitchControl,
   SwitchLabel,
   SwitchThumb,
-} from "./ui/switch";
-import { IconCasino, IconLogin, IconLogout } from "./icons";
+} from "@/components/ui/switch";
+import { IconCasino, IconLogin, IconLogout } from "@/components/icons";
 import { toast } from "solid-sonner";
 import { t } from "@/i18n";
 import {
@@ -33,12 +33,12 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "./ui/tooltip";
-import { Spinner } from "./common/spinner";
+} from "@/components/ui/tooltip";
+import { Spinner } from "@/components/common/spinner";
 import { appState } from "@/libs/state/app-state";
 
 export const createRoomDialog = () => {
-  const { open, close, submit, Component } = createDialog({
+  const { open, close, submit } = createDialog({
     title: () => t("common.join_form.title"),
     description: () => t("common.join_form.description"),
     content: () => (
@@ -202,7 +202,7 @@ export const createRoomDialog = () => {
       </Button>
     ),
   });
-  return { open, Component };
+  return { open };
 };
 
 export const joinUrl = createMemo(() => {
@@ -257,73 +257,70 @@ export function JoinRoomButton(
   props: ComponentProps<"button">,
 ) {
   const { joinRoom, leaveRoom } = useAppState();
-  const { open, Component } = createRoomDialog();
+  const { open } = createRoomDialog();
   const [local, other] = splitProps(props, ["class"]);
   return (
-    <>
-      <Component />
-      <Show
-        when={
-          appState.session.clientServiceStatus ===
-          "disconnected"
-        }
-        fallback={
-          <Tooltip>
-            <TooltipTrigger
-              as={Button}
-              class={local.class}
-              disabled={
-                appState.session.clientServiceStatus !==
-                "connected"
-              }
-              onClick={() => leaveRoom()}
-              variant="outline"
-              size="icon"
-            >
-              <Show
-                when={
-                  appState.session.clientServiceStatus ===
-                  "connecting"
-                }
-                fallback={<IconLogout class="size-6" />}
-              >
-                <Spinner />
-              </Show>
-            </TooltipTrigger>
-            <TooltipContent>
-              {t("common.nav.leave_room")}
-            </TooltipContent>
-          </Tooltip>
-        }
-      >
+    <Show
+      when={
+        appState.session.clientServiceStatus ===
+        "disconnected"
+      }
+      fallback={
         <Tooltip>
           <TooltipTrigger
             as={Button}
             class={local.class}
-            size="icon"
             disabled={
               appState.session.clientServiceStatus !==
-              "disconnected"
+              "connected"
             }
-            onClick={async () => {
-              const result = await open();
-              if (result.cancel) return;
-
-              await joinRoom().catch((err) => {
-                console.error(err);
-                toast.error(err.message);
-              });
-            }}
-            {...props}
+            onClick={() => leaveRoom()}
+            variant="outline"
+            size="icon"
           >
-            <IconLogin class="size-6" />
+            <Show
+              when={
+                appState.session.clientServiceStatus ===
+                "connecting"
+              }
+              fallback={<IconLogout class="size-6" />}
+            >
+              <Spinner />
+            </Show>
           </TooltipTrigger>
           <TooltipContent>
-            {t("common.nav.join_room")}
+            {t("common.nav.leave_room")}
           </TooltipContent>
         </Tooltip>
-      </Show>
-    </>
+      }
+    >
+      <Tooltip>
+        <TooltipTrigger
+          as={Button}
+          class={local.class}
+          size="icon"
+          disabled={
+            appState.session.clientServiceStatus !==
+            "disconnected"
+          }
+          onClick={async () => {
+            const result = await open();
+            if (result.cancel) return;
+
+            await joinRoom().catch((err) => {
+              console.error(err);
+              toast.error(err.message);
+            });
+          }}
+          {...props}
+        >
+          <IconLogin class="size-6" />
+        </TooltipTrigger>
+        <TooltipContent>
+          {t("common.nav.join_room")}
+        </TooltipContent>
+      </Tooltip>
+    </Show>
   );
 }
 

@@ -1,111 +1,304 @@
+import type { ChunkMetaData } from "@/libs/cache";
 import type { PeerSession } from "@/libs/core/session";
-import type {
-  CheckMessage,
-  ErrorMessage,
-  MessageID,
-  SessionMessage,
-} from "@/libs/core/message";
-import type { ClientID } from "@/libs/core/type";
-import { createRtcService } from "@/libs/services/rtc-service";
+import type { ClientID, FileID } from "@/libs/core/type";
+import type { ChunkRange } from "@/libs/utils/range";
 import {
-  RTC_PROTOCOL_DEDUP_CLEANUP_INTERVAL_MS,
-  RTC_PROTOCOL_DEDUP_TTL_MS,
-} from "@/constants";
+  createRtcService,
+  RtcMessageStateMachine,
+  type RtcMessageContext,
+  type RtcMessageHandler,
+  type RtcServiceRequestError,
+  type RtcServiceRequestErrorCode,
+  type RtcServiceRequestHandlerOptions,
+  type RtcServiceRequestOptions,
+  type RtcServiceRequestResult,
+  type RtcServiceTransport,
+} from "@/libs/services/rtc-service";
+
+export type MessageID = string;
+
+export interface BaseExchangeMessage {
+  id: MessageID;
+  type: string;
+  createdAt: number;
+  client: ClientID;
+  target: ClientID;
+  status?: "sending" | "received" | "error";
+}
+
+export type SendTextMessage = BaseExchangeMessage & {
+  type: "send-text";
+  data: string;
+};
+
+export type AckMessage = BaseExchangeMessage & {
+  type: "ack";
+  mode: "send" | "receive";
+  id: MessageID;
+};
+
+export type ReadTextMessage = BaseExchangeMessage & {
+  type: "read-text";
+  id: MessageID;
+};
+
+export type RequestFileMessage = BaseExchangeMessage & {
+  type: "request-file";
+  fid: FileID;
+  ranges?: ChunkRange[];
+  fileName: string;
+  fileSize: number;
+  mimeType?: string;
+  lastModified?: number;
+  chunkSize: number;
+  resume: boolean;
+};
+
+export type ResumeFileMessage = BaseExchangeMessage & {
+  type: "resume-file";
+  fid: FileID;
+};
+
+export type SendFileMessage = BaseExchangeMessage & {
+  type: "send-file";
+  fid: FileID;
+  fileName: string;
+  fileSize: number;
+  mimeType?: string;
+  lastModified?: number;
+  chunkSize: number;
+};
+
+export type SendClipboardMessage = BaseExchangeMessage & {
+  type: "send-clipboard";
+  data: string;
+};
+
+export type ErrorMessage = BaseExchangeMessage & {
+  type: "error";
+  error: string;
+  data?: unknown;
+};
+
+export type StorageMessage = BaseExchangeMessage & {
+  type: "storage";
+  data: ChunkMetaData[];
+};
+
+export type RequestStorageMessage = BaseExchangeMessage & {
+  type: "request-storage";
+};
+
+export type StreamStateMessage = BaseExchangeMessage & {
+  type: "stream-state";
+  mode: "placeholder" | "media";
+};
+
+export type SessionMessage =
+  | SendTextMessage
+  | AckMessage
+  | ReadTextMessage
+  | RequestFileMessage
+  | SendFileMessage
+  | SendClipboardMessage
+  | ErrorMessage
+  | StorageMessage
+  | RequestStorageMessage
+  | ResumeFileMessage
+  | StreamStateMessage;
+
+type MessageFactoryBaseInput = {
+  id?: MessageID;
+  createdAt?: number;
+  client: ClientID;
+  target: ClientID;
+};
+
+const createMessageId = () => {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const createMessageBase = (
+  input: MessageFactoryBaseInput,
+) => ({
+  id: input.id ?? createMessageId(),
+  createdAt: input.createdAt ?? Date.now(),
+  client: input.client,
+  target: input.target,
+});
+
+/**
+ * Factory helpers that keep app-protocol messages in one place.
+ * App state should build protocol payloads from here instead of
+ * constructing raw objects in business logic.
+ */
+export const protocolMessageFactory = {
+  sendText: (
+    input: MessageFactoryBaseInput & {
+      data: string;
+    },
+  ): SendTextMessage => ({
+    ...createMessageBase(input),
+    type: "send-text",
+    data: input.data,
+  }),
+  ack: (
+    input: Omit<MessageFactoryBaseInput, "id"> & {
+      id: MessageID;
+      mode: AckMessage["mode"];
+    },
+  ): AckMessage => ({
+    ...createMessageBase(input),
+    type: "ack",
+    mode: input.mode,
+  }),
+  readText: (
+    input: Omit<MessageFactoryBaseInput, "id"> & {
+      id: MessageID;
+    },
+  ): ReadTextMessage => ({
+    ...createMessageBase(input),
+    type: "read-text",
+  }),
+  requestFile: (
+    input: MessageFactoryBaseInput & {
+      fid: FileID;
+      ranges?: ChunkRange[];
+      fileName: string;
+      fileSize: number;
+      mimeType?: string;
+      lastModified?: number;
+      chunkSize: number;
+      resume: boolean;
+    },
+  ): RequestFileMessage => ({
+    ...createMessageBase(input),
+    type: "request-file",
+    fid: input.fid,
+    ranges: input.ranges,
+    fileName: input.fileName,
+    fileSize: input.fileSize,
+    mimeType: input.mimeType,
+    lastModified: input.lastModified,
+    chunkSize: input.chunkSize,
+    resume: input.resume,
+  }),
+  resumeFile: (
+    input: MessageFactoryBaseInput & {
+      fid: FileID;
+    },
+  ): ResumeFileMessage => ({
+    ...createMessageBase(input),
+    type: "resume-file",
+    fid: input.fid,
+  }),
+  sendFile: (
+    input: MessageFactoryBaseInput & {
+      fid: FileID;
+      fileName: string;
+      fileSize: number;
+      mimeType?: string;
+      lastModified?: number;
+      chunkSize: number;
+    },
+  ): SendFileMessage => ({
+    ...createMessageBase(input),
+    type: "send-file",
+    fid: input.fid,
+    fileName: input.fileName,
+    fileSize: input.fileSize,
+    mimeType: input.mimeType,
+    lastModified: input.lastModified,
+    chunkSize: input.chunkSize,
+  }),
+  sendClipboard: (
+    input: MessageFactoryBaseInput & {
+      data: string;
+    },
+  ): SendClipboardMessage => ({
+    ...createMessageBase(input),
+    type: "send-clipboard",
+    data: input.data,
+  }),
+  error: (
+    input: Omit<MessageFactoryBaseInput, "id"> & {
+      id: MessageID;
+      error: string;
+      data?: unknown;
+    },
+  ): ErrorMessage => ({
+    ...createMessageBase(input),
+    type: "error",
+    error: input.error,
+    data: input.data,
+  }),
+  storage: (
+    input: MessageFactoryBaseInput & {
+      data: ChunkMetaData[];
+    },
+  ): StorageMessage => ({
+    ...createMessageBase(input),
+    type: "storage",
+    data: input.data,
+  }),
+  requestStorage: (
+    input: MessageFactoryBaseInput,
+  ): RequestStorageMessage => ({
+    ...createMessageBase(input),
+    type: "request-storage",
+  }),
+  streamState: (
+    input: MessageFactoryBaseInput & {
+      mode: StreamStateMessage["mode"];
+    },
+  ): StreamStateMessage => ({
+    ...createMessageBase(input),
+    type: "stream-state",
+    mode: input.mode,
+  }),
+} as const;
 
 export type RtcProtocolMessageContext<
   T extends SessionMessage = SessionMessage,
-> = {
-  session: PeerSession;
-  message: T;
-};
+> = RtcMessageContext<T>;
 
 export type RtcProtocolMessageHandler<
   T extends SessionMessage["type"],
-> = (
-  ctx: RtcProtocolMessageContext<
-    Extract<SessionMessage, { type: T }>
-  >,
-) => void | Promise<void>;
+> = RtcMessageHandler<T>;
 
-export type RtcProtocolRequestOptions = {
-  timeoutMs?: number;
-  retries?: number;
-  retryDelayMs?: number;
-  signal?: AbortSignal;
-};
+export type RtcProtocolRequestOptions =
+  RtcServiceRequestOptions;
 
-export type RtcProtocolRequestHandlerOptions = {
-  ackMode: CheckMessage["mode"];
-};
+export type RtcProtocolRequestHandlerOptions =
+  RtcServiceRequestHandlerOptions;
 
-export type RtcProtocolTransport = {
-  send: (session: PeerSession, message: SessionMessage) => void;
-  onAny: (
-    handler: (
-      ctx: RtcProtocolMessageContext<SessionMessage>,
-    ) => void | Promise<void>,
-  ) => () => void;
-};
+export type RtcProtocolTransport = RtcServiceTransport;
 
-type RequestHandlerEntry<T extends SessionMessage["type"]> =
-  {
-    ackMode: CheckMessage["mode"];
-    handler: RtcProtocolMessageHandler<T>;
-  };
+export type RtcProtocolRequestErrorCode =
+  RtcServiceRequestErrorCode;
 
-type PendingRequest = {
-  session: PeerSession;
-  request: SessionMessage;
-  resolve: (message: CheckMessage) => void;
-  reject: (error: Error) => void;
-  timer: ReturnType<typeof setTimeout> | null;
-  attempt: number;
-  maxAttempts: number;
-  timeoutMs: number;
-  retryDelayMs: number;
-};
+export type RtcProtocolRequestError = RtcServiceRequestError;
 
-type DedupStrategy = "id" | "createdAt";
-
-type ProcessedEntry = {
-  seenAt: number;
-  strategy: DedupStrategy;
-  createdAt?: number;
-};
-
-const dedupStrategyByType: Partial<
-  Record<SessionMessage["type"], DedupStrategy>
-> = {
-  "check-message": "id",
-  error: "id",
-  storage: "id",
-};
+export type RtcProtocolRequestResult =
+  RtcServiceRequestResult;
 
 export class RtcProtocol {
-  private readonly transport: RtcProtocolTransport;
-  private readonly handlersByType = new Map<
-    SessionMessage["type"],
-    Set<(ctx: RtcProtocolMessageContext<any>) => unknown>
-  >();
-  private readonly requestHandlersByType = new Map<
-    SessionMessage["type"],
-    RequestHandlerEntry<any>[]
-  >();
-  private readonly pending = new Map<MessageID, PendingRequest>();
-  private readonly processed = new Map<string, ProcessedEntry>();
-  private readonly inFlight = new Map<string, number>();
-
-  private lastCleanupAt = 0;
+  private readonly stateMachine: RtcMessageStateMachine;
 
   constructor(transport: RtcProtocolTransport) {
-    this.transport = transport;
-    this.transport.onAny(({ session, message }) => {
-      void this.handleIncoming(session, message);
-    });
+    this.stateMachine = new RtcMessageStateMachine(
+      transport,
+    );
   }
 
   send(session: PeerSession, message: SessionMessage) {
-    this.transport.send(session, message);
+    this.stateMachine.send(session, message);
   }
 
   request(
@@ -113,129 +306,30 @@ export class RtcProtocol {
     message: SessionMessage,
     options: RtcProtocolRequestOptions = {},
   ) {
-    const timeoutMs = options.timeoutMs ?? 5000;
-    const retries = options.retries ?? 0;
-    const retryDelayMs = options.retryDelayMs ?? 250;
+    return this.stateMachine.request(
+      session,
+      message,
+      options,
+    );
+  }
 
-    if (this.pending.has(message.id)) {
-      return Promise.reject(
-        new Error(
-          `[RtcProtocol] request already pending: ${message.id}`,
-        ),
-      );
-    }
-
-    return new Promise<CheckMessage>((resolve, reject) => {
-      const pending: PendingRequest = {
-        session,
-        request: message,
-        resolve,
-        reject,
-        timer: null,
-        attempt: 0,
-        maxAttempts: 1 + Math.max(0, retries),
-        timeoutMs,
-        retryDelayMs,
-      };
-      this.pending.set(message.id, pending);
-
-      const controller = new AbortController();
-      const signal = options.signal;
-
-      const cleanup = () => {
-        if (pending.timer) clearTimeout(pending.timer);
-        pending.timer = null;
-        this.pending.delete(message.id);
-        controller.abort();
-      };
-
-      controller.signal.addEventListener(
-        "abort",
-        () => {
-          // no-op, just ensures listeners are released
-        },
-        { once: true },
-      );
-
-      if (signal) {
-        if (signal.aborted) {
-          cleanup();
-          reject(new Error(`[RtcProtocol] request aborted`));
-          return;
-        }
-        signal.addEventListener(
-          "abort",
-          () => {
-            cleanup();
-            reject(
-              new Error(`[RtcProtocol] request aborted`),
-            );
-          },
-          { once: true, signal: controller.signal },
-        );
-      }
-
-      const onTimeout = () => {
-        const current = this.pending.get(message.id);
-        if (!current) return;
-
-        current.attempt++;
-        if (current.attempt >= current.maxAttempts) {
-          cleanup();
-          reject(
-            new Error(`[RtcProtocol] request timeout`),
-          );
-          return;
-        }
-
-        setTimeout(() => {
-          const next = this.pending.get(message.id);
-          if (!next) return;
-          this.safeSend(next.session, next.request);
-          next.timer = setTimeout(
-            onTimeout,
-            next.timeoutMs,
-          );
-        }, current.retryDelayMs);
-      };
-
-      this.safeSend(session, message);
-      pending.timer = setTimeout(onTimeout, timeoutMs);
-
-      const originalResolve = resolve;
-      const originalReject = reject;
-      pending.resolve = (msg) => {
-        cleanup();
-        originalResolve(msg);
-      };
-      pending.reject = (err) => {
-        cleanup();
-        originalReject(err);
-      };
-    });
+  async requestWithResult(
+    session: PeerSession,
+    message: SessionMessage,
+    options: RtcProtocolRequestOptions = {},
+  ): Promise<RtcProtocolRequestResult> {
+    return this.stateMachine.requestWithResult(
+      session,
+      message,
+      options,
+    );
   }
 
   on<T extends SessionMessage["type"]>(
     type: T,
     handler: RtcProtocolMessageHandler<T>,
   ) {
-    let handlers = this.handlersByType.get(type);
-    if (!handlers) {
-      handlers = new Set();
-      this.handlersByType.set(type, handlers);
-    }
-
-    const wrapped = handler as unknown as (
-      ctx: RtcProtocolMessageContext<any>,
-    ) => unknown;
-    handlers.add(wrapped);
-
-    return () => {
-      handlers?.delete(wrapped);
-      if (handlers && handlers.size === 0) {
-        this.handlersByType.delete(type);
-      }
-    };
+    return this.stateMachine.on(type, handler);
   }
 
   onRequest<T extends SessionMessage["type"]>(
@@ -243,251 +337,11 @@ export class RtcProtocol {
     handler: RtcProtocolMessageHandler<T>,
     options: RtcProtocolRequestHandlerOptions,
   ) {
-    const entries =
-      this.requestHandlersByType.get(type) ?? [];
-    entries.push({
-      ackMode: options.ackMode,
-      handler: handler as any,
-    });
-    this.requestHandlersByType.set(type, entries);
-
-    return () => {
-      const next = this.requestHandlersByType.get(type);
-      if (!next) return;
-      const index = next.findIndex(
-        (e) => e.handler === handler,
-      );
-      if (index !== -1) next.splice(index, 1);
-      if (next.length === 0) {
-        this.requestHandlersByType.delete(type);
-      } else {
-        this.requestHandlersByType.set(type, next);
-      }
-    };
-  }
-
-  private safeSend(session: PeerSession, message: SessionMessage) {
-    try {
-      this.transport.send(session, message);
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  private makeDedupKey(message: SessionMessage) {
-    return `${message.type}:${message.id}`;
-  }
-
-  private isDuplicate(message: SessionMessage) {
-    const key = this.makeDedupKey(message);
-    const entry = this.processed.get(key);
-    if (!entry) return false;
-
-    entry.seenAt = Date.now();
-    if (entry.strategy === "id") return true;
-    return entry.createdAt === message.createdAt;
-  }
-
-  private markProcessed(message: SessionMessage) {
-    const strategy =
-      dedupStrategyByType[message.type] ?? "createdAt";
-    const entry: ProcessedEntry = {
-      seenAt: Date.now(),
-      strategy,
-      createdAt:
-        strategy === "createdAt"
-          ? message.createdAt
-          : undefined,
-    };
-    this.processed.set(this.makeDedupKey(message), entry);
-  }
-
-  private cleanupProcessed() {
-    const now = Date.now();
-    if (
-      now - this.lastCleanupAt <
-      RTC_PROTOCOL_DEDUP_CLEANUP_INTERVAL_MS
-    ) {
-      return;
-    }
-    this.lastCleanupAt = now;
-
-    for (const [key, entry] of this.processed) {
-      if (now - entry.seenAt > RTC_PROTOCOL_DEDUP_TTL_MS) {
-        this.processed.delete(key);
-      }
-    }
-  }
-
-  private async handleIncoming(
-    session: PeerSession,
-    message: SessionMessage,
-  ) {
-    this.cleanupProcessed();
-
-    if (message.type === "check-message") {
-      const shouldDispatch =
-        this.handleCheckMessage(message);
-      if (!shouldDispatch) return;
-      await this.dispatchHandlers(session, message);
-      return;
-    }
-
-    if (message.type === "error") {
-      const shouldDispatch =
-        this.handleErrorMessage(message);
-      if (!shouldDispatch) return;
-      await this.dispatchHandlers(session, message);
-      return;
-    }
-
-    if (
-      (dedupStrategyByType[message.type] ?? "createdAt") ===
-        "id" &&
-      this.isDuplicate(message)
-    ) {
-      return;
-    }
-
-    const requestEntries = this.requestHandlersByType.get(
-      message.type,
+    return this.stateMachine.onRequest(
+      type,
+      handler,
+      options,
     );
-    if (requestEntries && requestEntries.length > 0) {
-      await this.handleRequest(
-        session,
-        message,
-        requestEntries,
-      );
-      await this.dispatchHandlers(session, message);
-      return;
-    }
-
-    await this.dispatchHandlers(session, message);
-  }
-
-  private handleCheckMessage(message: CheckMessage) {
-    const pending = this.pending.get(message.id);
-    const duplicate = this.isDuplicate(message);
-    if (duplicate && !pending) return false;
-    if (!duplicate) this.markProcessed(message);
-    if (pending) pending.resolve(message);
-    return true;
-  }
-
-  private handleErrorMessage(message: ErrorMessage) {
-    const pending = this.pending.get(message.id);
-    const duplicate = this.isDuplicate(message);
-    if (duplicate && !pending) return false;
-    if (!duplicate) this.markProcessed(message);
-    if (pending) pending.reject(new Error(message.error));
-    return true;
-  }
-
-  private async handleRequest(
-    session: PeerSession,
-    message: SessionMessage,
-    entries: RequestHandlerEntry<any>[],
-  ) {
-    const duplicate = this.isDuplicate(message);
-    const ackMode = entries[0]?.ackMode ?? "receive";
-
-    if (duplicate) {
-      this.safeSend(
-        session,
-        this.createCheckMessage(message, ackMode),
-      );
-      return;
-    }
-
-    const key = this.makeDedupKey(message);
-    if (this.inFlight.get(key) === message.createdAt) {
-      return;
-    }
-    this.inFlight.set(key, message.createdAt);
-
-    try {
-      for (const entry of entries) {
-        await entry.handler({ session, message });
-      }
-
-      this.markProcessed(message);
-
-      this.safeSend(
-        session,
-        this.createCheckMessage(message, ackMode),
-      );
-    } catch (err) {
-      console.error(err);
-      if (err instanceof Error) {
-        this.safeSend(
-          session,
-          this.createErrorMessage(message, err.message),
-        );
-      } else {
-        this.safeSend(
-          session,
-          this.createErrorMessage(message, String(err)),
-        );
-      }
-    } finally {
-      if (this.inFlight.get(key) === message.createdAt) {
-        this.inFlight.delete(key);
-      }
-    }
-  }
-
-  private async dispatchHandlers(
-    session: PeerSession,
-    message: SessionMessage,
-  ) {
-    const handlers = this.handlersByType.get(message.type);
-    if (!handlers || handlers.size === 0) return;
-
-    for (const handler of handlers) {
-      try {
-        await handler({ session, message });
-      } catch (err) {
-        console.error(err);
-        if (
-          message.type !== "error" &&
-          err instanceof Error
-        ) {
-          this.safeSend(
-            session,
-            this.createErrorMessage(message, err.message),
-          );
-        }
-        return;
-      }
-    }
-  }
-
-  private createCheckMessage(
-    message: SessionMessage,
-    mode: CheckMessage["mode"],
-  ): CheckMessage {
-    return {
-      type: "check-message",
-      id: message.id,
-      createdAt: Date.now(),
-      client: message.target,
-      target: message.client,
-      mode,
-    };
-  }
-
-  private createErrorMessage(
-    message: SessionMessage,
-    error: string,
-  ): ErrorMessage {
-    return {
-      type: "error",
-      id: message.id,
-      client: message.target,
-      target: message.client,
-      createdAt: Date.now(),
-      error,
-    };
   }
 }
 
@@ -498,10 +352,4 @@ export function createRtcProtocol() {
     rtcProtocol = new RtcProtocol(createRtcService());
   }
   return rtcProtocol;
-}
-
-export function getRtcProtocolTarget(
-  ctx: RtcProtocolMessageContext,
-): ClientID {
-  return ctx.session.targetClientId;
 }

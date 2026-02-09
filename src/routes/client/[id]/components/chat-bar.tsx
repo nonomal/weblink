@@ -22,7 +22,7 @@ import {
   IconSend,
 } from "@/components/icons";
 import { t } from "@/i18n";
-import { createSendItemPreviewDialog } from "@/components/preview-dialog";
+import { createSendItemPreviewDialog } from "@/components/dialogs/preview-dialog";
 import { toast } from "solid-sonner";
 import { appState } from "@/libs/state/app-state";
 
@@ -43,7 +43,7 @@ export const ChatBar: Component<
   const { sendText, sendFile } = useAppState();
   const [text, setText] = createSignal("");
 
-  const { open: openPreview, Component: PreviewDialog } =
+  const { open: openPreview } =
     createSendItemPreviewDialog();
   const isMobile = createIsMobile();
   const onSend = async () => {
@@ -84,7 +84,6 @@ export const ChatBar: Component<
       )}
       {...other}
     >
-      <PreviewDialog />
       <form
         id="send"
         class="flex flex-col gap-1"

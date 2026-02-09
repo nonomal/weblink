@@ -1,12 +1,9 @@
 import { t } from "@/i18n";
-import { createDialog } from "../dialogs/dialog";
+import { createDialog } from "./dialog";
 import IconGitHub from "@/assets/icons/github-mark.svg?component-solid";
 
 const createAboutDialog = () => {
-  const {
-    open: openAboutDialog,
-    Component: AboutDialogComponent,
-  } = createDialog({
+  const { open: openAboutDialog } = createDialog({
     title: () => t("common.about_dialog.title"),
     content: () => {
       return (
@@ -54,13 +51,8 @@ const createAboutDialog = () => {
     },
   });
 
-  const open = () => {
-    openAboutDialog();
-  };
-
   return {
-    open,
-    Component: () => <AboutDialogComponent />,
+    open: openAboutDialog,
   };
 };
 
